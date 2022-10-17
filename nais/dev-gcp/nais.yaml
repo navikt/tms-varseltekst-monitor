@@ -1,0 +1,51 @@
+apiVersion: "nais.io/v1alpha1"
+kind: "Application"
+metadata:
+  name: tms-varseltekst-monitor
+  namespace: min-side
+  labels:
+    team: min-side
+spec:
+  envFrom:
+    - secret: tms-varseltekst-monitor-secrets
+  image: {{version}}
+  port: 8080
+  liveness:
+    path: /isalive
+  readiness:
+    path: /isready
+  prometheus:
+    enabled: true
+    path: /metrics
+  replicas:
+    min: 1
+    max: 1
+    cpuThresholdPercentage: 50
+  ingresses:
+    - "https://tms-varseltekst-monitor.dev.nav.no"
+  resources:
+    limits:
+      cpu: "1"
+      memory: 800Mi
+    requests:
+      cpu: "10m"
+      memory: 50Mi
+  gcp:
+    sqlInstances:
+      - name: varseltekster
+        type: POSTGRES_14
+        tier: db-f1-micro
+        diskType: SSD
+        highAvailability: false
+        diskSize: 10
+        diskAutoresize: false
+        autoBackupTime: "03:00"
+        databases:
+          - name: varseltekster
+            envVarPrefix: DB
+        maintenanceWindow:
+          day: 1
+          hour: 4
+        cascadingDelete: false
+  kafka:
+    pool: nav-dev
