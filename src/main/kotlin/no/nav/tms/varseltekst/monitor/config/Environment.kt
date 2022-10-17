@@ -9,10 +9,7 @@ data class Environment(val clusterName: String = getEnvVar("NAIS_CLUSTER_NAME"),
                        val dbHost: String = getEnvVar("DB_HOST"),
                        val dbPort: String = getEnvVar("DB_PORT"),
                        val dbName: String = getEnvVar("DB_DATABASE"),
-                       val dbUrl: String = getDbUrl(dbHost, dbPort, dbName),
-                       val doknotifikasjonStatusGroupId: String = getEnvVar("GROUP_ID_DOKNOTIFIKASJON_STATUS"),
-                       val doknotifikasjonStatusTopicName: String = getEnvVar("DOKNOTIFIKASJON_STATUS_TOPIC"),
-                       val varselTopic: String = getEnvVar("VARSEL_RAPID_NAME")
+                       val dbUrl: String = getDbUrl(dbHost, dbPort, dbName)
 )
 
 fun getDbUrl(host: String, port: String, name: String): String {
