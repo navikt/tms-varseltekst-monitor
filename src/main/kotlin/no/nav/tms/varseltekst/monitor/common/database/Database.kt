@@ -3,13 +3,10 @@ package no.nav.tms.varseltekst.monitor.common.database
 import com.zaxxer.hikari.HikariDataSource
 import no.nav.tms.varseltekst.monitor.common.exceptions.RetriableDatabaseException
 import no.nav.tms.varseltekst.monitor.common.exceptions.UnretriableDatabaseException
-import no.nav.tms.varseltekst.monitor.health.HealthCheck
-import no.nav.tms.varseltekst.monitor.health.HealthStatus
-import no.nav.tms.varseltekst.monitor.health.Status
 import org.slf4j.Logger
 import java.sql.*
 
-interface Database: HealthCheck {
+interface Database {
 
     val log: Logger
 
@@ -39,17 +36,6 @@ interface Database: HealthCheck {
             dbQuery {
                 operationToExecute()
             }
-        }
-    }
-
-    override fun status(): HealthStatus {
-        val serviceName = "Database"
-        return try {
-            dbQuery { prepareStatement("""SELECT * FROM beskjed LIMIT 1""").execute() }
-            HealthStatus(serviceName, Status.OK, "200 OK")
-        } catch (e: Exception) {
-            log.error("Selftest mot databasen feilet", e)
-            HealthStatus(serviceName, Status.ERROR, "Feil mot DB")
         }
     }
 }
