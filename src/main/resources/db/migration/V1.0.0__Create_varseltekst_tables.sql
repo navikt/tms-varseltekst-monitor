@@ -4,7 +4,7 @@ create table varseltekster_v1 (
     produsent_appnavn text,
     sms_preferert boolean,
     epost_preferert boolean,
-    varsel_tekst,
+    varsel_tekst text,
     sms_tekst text,
     epost_tittel text,
     epost_tekst text,
