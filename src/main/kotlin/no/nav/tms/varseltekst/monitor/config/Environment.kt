@@ -9,10 +9,35 @@ data class Environment(val clusterName: String = getEnvVar("NAIS_CLUSTER_NAME"),
                        val dbHost: String = getEnvVar("DB_HOST"),
                        val dbPort: String = getEnvVar("DB_PORT"),
                        val dbName: String = getEnvVar("DB_DATABASE"),
-                       val dbUrl: String = getDbUrl(dbHost, dbPort, dbName)
+                       val dbUrl: String = getDbUrl(dbHost, dbPort, dbName),
+                       val kafkaEnvironment: Map<String, String> = getKafkaEnv()
 )
 
-fun getDbUrl(host: String, port: String, name: String): String {
+private fun getKafkaEnv(): Map<String, String> {
+    return System.getenv().keepKeys(
+        "RAPID_TOPIC",
+        "KAFKA_BROKERS",
+        "KAFKA_CONSUMER_GROUP_ID",
+        "KAFKA_RAPID_TOPIC",
+        "KAFKA_KEYSTORE_PATH",
+        "KAFKA_CREDSTORE_PASSWORD",
+        "KAFKA_TRUSTSTORE_PATH"
+    )
+}
+
+private fun Map<String, String>.keepKeys(vararg keys: String): Map<String, String> {
+    val out = mutableMapOf<String, String>()
+
+    keys.forEach { key ->
+        if (contains(key)) {
+            out[key] = get(key)!!
+        }
+    }
+
+    return out
+}
+
+private fun getDbUrl(host: String, port: String, name: String): String {
     return if (host.endsWith(":$port")) {
         "jdbc:postgresql://${host}/$name"
     } else {

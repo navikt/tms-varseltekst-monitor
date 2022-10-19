@@ -11,3 +11,4 @@ class ApplicationContext {
     private val varselRepository = VarselRepository(database)
     val varselSink = VarselSink(varselRepository)
 }
+
