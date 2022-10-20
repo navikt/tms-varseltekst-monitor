@@ -68,8 +68,6 @@ class VarselSink(
     }
 
     private fun parseTidspunkt(jsonMessage: JsonMessage): LocalDateTime {
-        val epoch = jsonMessage["forstBehandlet"].longValue()
-
-        return LocalDateTime.from(Instant.ofEpochMilli(epoch))
+        return LocalDateTime.parse(jsonMessage["forstBehandlet"].asText())
     }
 }
