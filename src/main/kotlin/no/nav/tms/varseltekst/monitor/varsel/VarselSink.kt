@@ -60,11 +60,11 @@ class VarselSink(
     }
 
     private fun isPrefererertKanalSms(jsonMessage: JsonMessage): Boolean {
-        return jsonMessage["prefererteKanaler"].textValue().uppercase().contains("(^|,)SMS(,|$)")
+        return jsonMessage["prefererteKanaler"].map { it.textValue() }.contains("SMS")
     }
 
     private fun isPreferertKanalEpost(jsonMessage: JsonMessage): Boolean {
-        return jsonMessage["prefererteKanaler"].textValue().uppercase().contains("(^|,)EPOST(,|$)")
+        return jsonMessage["prefererteKanaler"].map{ it.textValue() }.contains("EPOST")
     }
 
     private fun parseTidspunkt(jsonMessage: JsonMessage): LocalDateTime {
