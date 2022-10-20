@@ -1,6 +1,5 @@
 package no.nav.tms.varseltekst.monitor.varsel
 
-import kotlinx.coroutines.runBlocking
 import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.helse.rapids_rivers.MessageProblems
@@ -8,7 +7,6 @@ import no.nav.helse.rapids_rivers.River
 import no.nav.tms.varseltekst.monitor.config.PacketValidator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.time.Instant
 import java.time.LocalDateTime
 
 class VarselSink(
@@ -43,9 +41,7 @@ class VarselSink(
             tidspunkt = parseTidspunkt(packet)
         )
 
-        runBlocking {
-            varselRepository.persistVarselTekster(varselTekster)
-        }
+        varselRepository.persistVarselTekster(varselTekster)
     }
 
     override fun onError(problems: MessageProblems, context: MessageContext) {
