@@ -21,7 +21,8 @@ private fun getKafkaEnv(): Map<String, String> {
         "KAFKA_RAPID_TOPIC",
         "KAFKA_KEYSTORE_PATH",
         "KAFKA_CREDSTORE_PASSWORD",
-        "KAFKA_TRUSTSTORE_PATH"
+        "KAFKA_TRUSTSTORE_PATH",
+        "KAFKA_RESET_POLICY"
     )
 }
 
