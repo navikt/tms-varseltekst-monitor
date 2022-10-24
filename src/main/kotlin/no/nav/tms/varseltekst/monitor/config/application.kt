@@ -12,6 +12,7 @@ fun main() {
 private fun startRapid(appContext: ApplicationContext) {
     RapidApplication.create(appContext.environment.kafkaEnvironment).apply {
         registerSink(appContext.varselSink)
+        registerSink(appContext.varselSink2)
     }.apply {
         register(object : RapidsConnection.StatusListener {
             override fun onStartup(rapidsConnection: RapidsConnection) {
