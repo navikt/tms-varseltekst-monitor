@@ -16,7 +16,7 @@ private fun upsertTekstQuery(table: String) = """
          )
     SELECT id FROM inserted_tekst
         UNION ALL
-    SELECT t.id FROM input_vals 
+    SELECT t.id FROM input_tekst 
         JOIN $table t USING (tekst);
 """.trimIndent()
 
