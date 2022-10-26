@@ -1,4 +1,4 @@
-package no.nav.tms.varseltekst.monitor.common
+package no.nav.tms.varseltekst.monitor.util
 
 import java.time.LocalDateTime
 import java.time.ZoneId

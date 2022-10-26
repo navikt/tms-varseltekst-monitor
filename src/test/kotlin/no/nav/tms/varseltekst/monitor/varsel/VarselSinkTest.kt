@@ -1,0 +1,142 @@
+package no.nav.tms.varseltekst.monitor.varsel
+
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.shouldBe
+import no.nav.helse.rapids_rivers.testsupport.TestRapid
+import no.nav.tms.varseltekst.monitor.coalesce.CoalescingRepository
+import no.nav.tms.varseltekst.monitor.coalesce.CoalescingService
+import no.nav.tms.varseltekst.monitor.coalesce.TekstTable.*
+import no.nav.tms.varseltekst.monitor.coalesce.rules.CoalescingRule
+import no.nav.tms.varseltekst.monitor.coalesce.rules.NumberCensorRule
+import no.nav.tms.varseltekst.monitor.config.LocalPostgresDatabase
+import no.nav.tms.varseltekst.monitor.config.clearAllTables
+import no.nav.tms.varseltekst.monitor.config.registerSink
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Test
+
+internal class VarselSinkTest {
+    private val database = LocalPostgresDatabase.migratedDb()
+
+    private val varselRepository = VarselRepository(database)
+    private val coalescingRepository = CoalescingRepository(database)
+
+
+    @AfterEach
+    fun reset() {
+        database.dbQuery {
+            clearAllTables()
+        }
+    }
+
+    @Test
+    fun `leser varsel fra rapid`() {
+        val testRapid = TestRapid()
+        testRapid.registerSink(createVarselSink())
+
+        val varsel = varselJson(
+            type = "beskjed",
+            eventId = "123",
+            eksternVarsling = true,
+            prefererteKanaler = listOf("SMS"),
+            tekst = "webTekst",
+            smsVarslingstekst = "smsTekst",
+            epostVarslingstittel = "epostTittel",
+            epostVarslingstekst = "epostTekst"
+        )
+
+        testRapid.sendTestMessage(varsel)
+
+        val result = database.dbQuery { selectVarsel("123") }
+
+        result.eventId shouldBe "123"
+        result.eventType shouldBe "beskjed"
+        result.eksternVarsling shouldBe true
+        result.preferertKanalSms shouldBe true
+        result.preferertKanalEpost shouldBe false
+        result.webTekst shouldBe "webTekst"
+        result.smsTekst shouldBe "smsTekst"
+        result.epostTittel shouldBe "epostTittel"
+        result.epostTekst shouldBe "epostTekst"
+    }
+
+    @Test
+    fun `lagrer unike varseltekster`() {
+        val testRapid = TestRapid()
+        testRapid.registerSink(createVarselSink())
+
+        val varsel1 = varselJson(
+            type = "beskjed",
+            eventId = "123",
+            eksternVarsling = true,
+            tekst = "tekst for web",
+            smsVarslingstekst = "smsTekst",
+            epostVarslingstittel = "epostTittel",
+            epostVarslingstekst = "epostTekst"
+        )
+
+        val varsel2 = varselJson(
+            type = "beskjed",
+            eventId = "456",
+            eksternVarsling = true,
+            tekst = "annen tekst for web",
+            smsVarslingstekst = "smsTekst",
+            epostVarslingstittel = "epostTittel",
+            epostVarslingstekst = "epostTekst"
+        )
+
+        testRapid.sendTestMessage(varsel1)
+        testRapid.sendTestMessage(varsel2)
+
+        database.dbQuery { antallTekster(WEB_TEKST) } shouldBe 2
+        database.dbQuery { antallTekster(SMS_TEKST) } shouldBe 1
+        database.dbQuery { antallTekster(EPOST_TITTEL) } shouldBe 1
+        database.dbQuery { antallTekster(EPOST_TEKST) } shouldBe 1
+
+        database.dbQuery { getTekster(WEB_TEKST) } shouldContainAll listOf("tekst for web", "annen tekst for web")
+        database.dbQuery { getTekster(SMS_TEKST) } shouldContain "smsTekst"
+        database.dbQuery { getTekster(EPOST_TITTEL) } shouldContain "epostTittel"
+        database.dbQuery { getTekster(EPOST_TEKST) } shouldContain "epostTekst"
+    }
+
+    @Test
+    fun `bruker CoalescingRule til å slå sammen visse tekster`() {
+        val testRapid = TestRapid()
+        testRapid.registerSink(createVarselSink(NumberCensorRule))
+
+        val varsel1 = varselJson(
+            type = "beskjed",
+            eventId = "123",
+            tekst = "beskjedTekst",
+            smsVarslingstekst = "sms-tekst 1"
+        )
+
+        val varsel2 = varselJson(
+            type = "oppgave",
+            eventId = "456",
+            tekst = "oppgaveTekst",
+            smsVarslingstekst = "sms-tekst 2"
+        )
+
+        val varsel3 = varselJson(
+            type = "innboks",
+            eventId = "456",
+            tekst = "innboksTekst",
+            smsVarslingstekst = "sms-tekst 3"
+        )
+
+        testRapid.sendTestMessage(varsel1)
+        testRapid.sendTestMessage(varsel2)
+        testRapid.sendTestMessage(varsel3)
+
+        database.dbQuery { antallTekster(WEB_TEKST) } shouldBe 3
+        database.dbQuery { antallTekster(SMS_TEKST) } shouldBe 1
+
+        database.dbQuery { getTekster(SMS_TEKST) } shouldContain "sms-tekst ***"
+    }
+
+    private fun createVarselSink(vararg rules: CoalescingRule) = VarselSink(
+        coalescingService = CoalescingService.initialize(coalescingRepository, rules.toList()),
+        varselRepository = varselRepository
+    )
+}

@@ -1,15 +1,18 @@
 package no.nav.tms.varseltekst.monitor.varsel
 
+import com.fasterxml.jackson.databind.JsonNode
 import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.helse.rapids_rivers.MessageProblems
 import no.nav.helse.rapids_rivers.River
+import no.nav.tms.varseltekst.monitor.coalesce.CoalescingService
 import no.nav.tms.varseltekst.monitor.config.PacketValidator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
 
 class VarselSink(
+    private val coalescingService: CoalescingService,
     private val varselRepository: VarselRepository,
 ) : River.PacketListener, PacketValidator {
 
@@ -28,7 +31,7 @@ class VarselSink(
                 "prefererteKanaler"
             )
         }
-        validate { it.interestedIn( "smsVarslingstekst", "epostVarslingstittel", "epostVarslingstekst",)}
+        validate { it.interestedIn( "smsVarslingstekst", "epostVarslingstittel", "epostVarslingstekst")}
     }
 
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
@@ -40,14 +43,24 @@ class VarselSink(
             eksternVarsling = packet["eksternVarsling"].booleanValue(),
             preferertKanalSms = isPrefererertKanalSms(packet),
             preferertKanalEpost = isPreferertKanalEpost(packet),
-            webTekst = packet["tekst"].textValue(),
-            smsTekst = packet["smsVarslingstekst"].textValue(),
-            epostTittel = packet["epostVarslingstittel"].textValue(),
-            epostTekst = packet["epostVarslingstekst"].textValue(),
+            webTekst = packet["tekst"].coalesce(),
+            smsTekst = packet["smsVarslingstekst"].coalesceIfNotNull(),
+            epostTittel = packet["epostVarslingstittel"].coalesceIfNotNull(),
+            epostTekst = packet["epostVarslingstekst"].coalesceIfNotNull(),
             varseltidspunkt = parseTidspunkt(packet)
         )
 
         varselRepository.persistVarsel(varsel)
+    }
+
+    private fun JsonNode.coalesce() = coalescingService.coalesce(textValue()).finalTekst
+
+    private fun JsonNode.coalesceIfNotNull(): String? {
+        return if (isTextual) {
+            coalescingService.coalesce(textValue()).finalTekst
+        } else {
+            null
+        }
     }
 
     override fun onError(problems: MessageProblems, context: MessageContext) {

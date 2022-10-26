@@ -11,11 +11,12 @@ fun main() {
 
 private fun startRapid(appContext: ApplicationContext) {
     RapidApplication.create(appContext.environment.kafkaEnvironment).apply {
-        registerSink(appContext.varselSink)
-    }.apply {
         register(object : RapidsConnection.StatusListener {
             override fun onStartup(rapidsConnection: RapidsConnection) {
                 Flyway.runFlywayMigrations(appContext.environment)
+                appContext.initCoalescingService()
+                appContext.coalescingBacklogJob.start()
+                registerSink(appContext.varselSink)
             }
 
             override fun onShutdown(rapidsConnection: RapidsConnection) {}
