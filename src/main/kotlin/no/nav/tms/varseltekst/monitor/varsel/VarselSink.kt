@@ -18,6 +18,8 @@ class VarselSink(
     override fun packetValidator(): River.() -> Unit = {
         validate { it.demandValue("eksternVarsling", true) }
         validate { it.requireKey(
+                "eventId",
+                "@event_name",
                 "namespace",
                 "appnavn",
                 "forstBehandlet",
@@ -30,29 +32,25 @@ class VarselSink(
     }
 
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
-        val varselTekster = Varseltekster(
-            producer = parseProducer(packet),
+        val varsel = Varsel(
+            eventId = packet["eventId"].textValue(),
+            eventType = packet["@event_name"].textValue(),
+            producerNamespace = packet["namespace"].textValue(),
+            producerAppnavn = packet["appnavn"].textValue(),
             preferertKanalSms = isPrefererertKanalSms(packet),
             preferertKanalEpost = isPreferertKanalEpost(packet),
-            tekst = packet["tekst"].textValue(),
+            webTekst = packet["tekst"].textValue(),
             smsTekst = packet["smsVarslingstekst"].textValue(),
             epostTittel = packet["epostVarslingstittel"].textValue(),
             epostTekst = packet["epostVarslingstekst"].textValue(),
-            tidspunkt = parseTidspunkt(packet)
+            varseltidspunkt = parseTidspunkt(packet)
         )
 
-        varselRepository.persistVarselTekster(varselTekster)
+        varselRepository.persistVarsel(varsel)
     }
 
     override fun onError(problems: MessageProblems, context: MessageContext) {
         log.error(problems.toString())
-    }
-
-    private fun parseProducer(jsonMessage: JsonMessage): Producer {
-        val namespace = jsonMessage["namespace"].textValue()
-        val appnavn = jsonMessage["appnavn"].textValue()
-
-        return Producer(namespace, appnavn)
     }
 
     private fun isPrefererertKanalSms(jsonMessage: JsonMessage): Boolean {

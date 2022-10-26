@@ -2,14 +2,10 @@ package no.nav.tms.varseltekst.monitor.varsel
 
 import no.nav.tms.varseltekst.monitor.common.LocalDateTimeHelper
 import no.nav.tms.varseltekst.monitor.common.database.Database
-import java.time.LocalDateTime
 
 class VarselRepository(private val database: Database) {
-    fun persistVarselTekster(varseltekster: Varseltekster) = database.queryWithExceptionTranslation {
-        createVarseltekster(varseltekster)
-    }
 
-    fun persistVarsel(varsel2: Varsel_2) {
+    fun persistVarsel(varsel2: Varsel) {
         val varselDto = VarselDto (
             eventId = varsel2.eventId,
             eventType = varsel2.eventType,
