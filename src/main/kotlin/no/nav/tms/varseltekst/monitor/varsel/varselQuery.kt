@@ -26,14 +26,14 @@ private val upsertEpostTittelIdQuery = upsertTekstQuery("epost_tittel")
 private val upsertEpostTekstIdQuery = upsertTekstQuery("epost_tekst")
 
 private val createVarselQuery = """
-    insert into varsel_v2 (
+    insert into varsel (
         event_id,
         eventType,
         produsent_namespace,
         produsent_appnavn,
         sms_preferert,
         epost_preferert,
-        varsel_tekst,
+        web_tekst,
         sms_tekst,
         epost_tittel,
         epost_tekst,
