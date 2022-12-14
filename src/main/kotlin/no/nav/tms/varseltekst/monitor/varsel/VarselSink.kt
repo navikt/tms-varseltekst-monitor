@@ -16,10 +16,11 @@ class VarselSink(
     private val log: Logger = LoggerFactory.getLogger(VarselSink::class.java)
 
     override fun packetValidator(): River.() -> Unit = {
+        validate { it.demandValue("@event_name", "aktivert") }
         validate { it.demandValue("eksternVarsling", true) }
         validate { it.requireKey(
                 "eventId",
-                "@event_name",
+                "varselType",
                 "namespace",
                 "appnavn",
                 "forstBehandlet",
@@ -34,7 +35,7 @@ class VarselSink(
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
         val varsel = Varsel(
             eventId = packet["eventId"].textValue(),
-            eventType = packet["@event_name"].textValue(),
+            eventType = packet["varselType"].textValue(),
             producerNamespace = packet["namespace"].textValue(),
             producerAppnavn = packet["appnavn"].textValue(),
             preferertKanalSms = isPrefererertKanalSms(packet),

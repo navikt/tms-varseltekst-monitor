@@ -39,6 +39,7 @@ private val createVarselQuery = """
         epost_tekst,
         tidspunkt
     ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    on conflict do nothing
 """.trimIndent()
 
 fun Connection.upsertWebTekst(tekst: String): Int = upsertTekst(upsertWebTekstIdQuery, tekst)
