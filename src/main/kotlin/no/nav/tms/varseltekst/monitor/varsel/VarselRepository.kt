@@ -5,19 +5,20 @@ import no.nav.tms.varseltekst.monitor.common.database.Database
 
 class VarselRepository(private val database: Database) {
 
-    fun persistVarsel(varsel2: Varsel) {
+    fun persistVarsel(varsel: Varsel) {
         val varselDto = VarselDto (
-            eventId = varsel2.eventId,
-            eventType = varsel2.eventType,
-            producerNamespace = varsel2.producerNamespace,
-            producerAppnavn = varsel2.producerAppnavn,
-            preferertKanalSms = varsel2.preferertKanalSms,
-            preferertKanalEpost = varsel2.preferertKanalEpost,
-            webTekstRef = persistWebTekst(varsel2.webTekst),
-            smsTekstRef = varsel2.smsTekst?.let { persistSmsTekst(it) },
-            epostTittelRef = varsel2.epostTittel?.let { persistEpostTittel(it) },
-            epostTekstRef = varsel2.epostTekst?.let { persistEpostTekst(it) },
-            varseltidspunkt = varsel2.varseltidspunkt,
+            eventId = varsel.eventId,
+            eventType = varsel.eventType,
+            producerNamespace = varsel.producerNamespace,
+            producerAppnavn = varsel.producerAppnavn,
+            eksternVarsling = varsel.eksternVarsling,
+            preferertKanalSms = varsel.preferertKanalSms,
+            preferertKanalEpost = varsel.preferertKanalEpost,
+            webTekstRef = persistWebTekst(varsel.webTekst),
+            smsTekstRef = varsel.smsTekst?.let { persistSmsTekst(it) },
+            epostTittelRef = varsel.epostTittel?.let { persistEpostTittel(it) },
+            epostTekstRef = varsel.epostTekst?.let { persistEpostTekst(it) },
+            varseltidspunkt = varsel.varseltidspunkt,
             tidspunkt = LocalDateTimeHelper.nowAtUtc()
         )
 

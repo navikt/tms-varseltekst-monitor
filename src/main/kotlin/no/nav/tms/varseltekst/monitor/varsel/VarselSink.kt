@@ -17,7 +17,6 @@ class VarselSink(
 
     override fun packetValidator(): River.() -> Unit = {
         validate { it.demandValue("@event_name", "aktivert") }
-        validate { it.demandValue("eksternVarsling", true) }
         validate { it.requireKey(
                 "eventId",
                 "varselType",
@@ -38,6 +37,7 @@ class VarselSink(
             eventType = packet["varselType"].textValue(),
             producerNamespace = packet["namespace"].textValue(),
             producerAppnavn = packet["appnavn"].textValue(),
+            eksternVarsling = packet["eksternVarsling"].booleanValue(),
             preferertKanalSms = isPrefererertKanalSms(packet),
             preferertKanalEpost = isPreferertKanalEpost(packet),
             webTekst = packet["tekst"].textValue(),

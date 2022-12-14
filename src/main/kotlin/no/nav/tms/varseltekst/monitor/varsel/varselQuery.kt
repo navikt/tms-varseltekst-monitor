@@ -31,6 +31,7 @@ private val createVarselQuery = """
         eventType,
         produsent_namespace,
         produsent_appnavn,
+        eksternVarsling,
         sms_preferert,
         epost_preferert,
         web_tekst,
@@ -38,7 +39,7 @@ private val createVarselQuery = """
         epost_tittel,
         epost_tekst,
         tidspunkt
-    ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     on conflict do nothing
 """.trimIndent()
 
@@ -58,13 +59,14 @@ private fun PreparedStatement.setParameters(varsel: VarselDto) {
     setString(2, varsel.eventType)
     setString(3, varsel.producerNamespace)
     setString(4, varsel.producerAppnavn)
-    setBoolean(5, varsel.preferertKanalSms)
-    setBoolean(6, varsel.preferertKanalEpost)
-    setInt(7, varsel.webTekstRef)
-    setObject(8, varsel.smsTekstRef, Types.INTEGER)
-    setObject(9, varsel.epostTittelRef, Types.INTEGER)
-    setObject(10, varsel.epostTekstRef, Types.INTEGER)
-    setObject(11, varsel.tidspunkt, Types.TIMESTAMP)
+    setBoolean(5, varsel.eksternVarsling)
+    setBoolean(6, varsel.preferertKanalSms)
+    setBoolean(7, varsel.preferertKanalEpost)
+    setInt(8, varsel.webTekstRef)
+    setObject(9, varsel.smsTekstRef, Types.INTEGER)
+    setObject(10, varsel.epostTittelRef, Types.INTEGER)
+    setObject(11, varsel.epostTekstRef, Types.INTEGER)
+    setObject(12, varsel.tidspunkt, Types.TIMESTAMP)
 }
 
 private fun Connection.upsertTekst(selectQuery: String, tekst: String): Int {
