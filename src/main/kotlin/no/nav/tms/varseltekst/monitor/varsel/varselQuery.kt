@@ -2,18 +2,17 @@ package no.nav.tms.varseltekst.monitor.varsel
 
 import no.nav.tms.varseltekst.monitor.coalesce.TekstTable
 import no.nav.tms.varseltekst.monitor.coalesce.TekstTable.*
-import no.nav.tms.varseltekst.monitor.coalesce.VarselTekst
+import no.nav.tms.varseltekst.monitor.util.LocalDateTimeHelper
 import java.sql.Connection
 import java.sql.PreparedStatement
-import java.sql.ResultSet
 import java.sql.Types
 
 private fun upsertTekstQuery(table: TekstTable) = """
-    WITH input_tekst(tekst) AS (
-        VALUES(?)
+    WITH input_tekst(tekst, first_seen_at) AS (
+        VALUES(?, ?)
     ),
          inserted_tekst AS (
-             INSERT INTO $table(tekst) SELECT tekst FROM input_tekst
+             INSERT INTO $table(tekst, first_seen_at) SELECT tekst, first_seen_at FROM input_tekst
                  ON CONFLICT (tekst) DO NOTHING
              RETURNING id
          )
@@ -77,6 +76,7 @@ private fun PreparedStatement.setParameters(varsel: VarselDto) {
 private fun Connection.upsertTekst(selectQuery: String, tekst: String): Int {
     return prepareStatement(selectQuery).use {
         it.setString(1, tekst)
+        it.setObject(2, LocalDateTimeHelper.nowAtUtc(), Types.TIMESTAMP)
 
         it.executeQuery().let { result ->
             if (result.next()) {

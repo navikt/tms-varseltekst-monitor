@@ -13,11 +13,11 @@ private val selectBacklogEntryQuery = """
 """.trimIndent()
 
 private fun upsertTekstQuery(table: TekstTable) = """
-    WITH input_tekst(tekst) AS (
-        VALUES(?)
+    WITH input_tekst(tekst, first_seen_at) AS (
+        VALUES(?, ?)
     ),
          inserted_tekst AS (
-             INSERT INTO $table(tekst) SELECT tekst FROM input_tekst
+             INSERT INTO $table(tekst, first_seen_at) SELECT tekst, first_seen_at FROM input_tekst
                  ON CONFLICT (tekst) DO NOTHING
              RETURNING id
          )
@@ -70,6 +70,7 @@ fun Connection.selectTekstById(table: TekstTable, id: Int): VarselTekst {
 fun Connection.upsertTekst(table: TekstTable, tekst: String): Int {
     return prepareStatement(upsertTekstQuery(table)).use {
         it.setString(1, tekst)
+        it.setObject(2, nowAtUtc(), Types.TIMESTAMP)
 
         it.executeQuery().let { result ->
             if (result.next()) {
