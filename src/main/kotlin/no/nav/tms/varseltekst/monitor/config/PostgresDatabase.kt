@@ -3,7 +3,7 @@ package no.nav.tms.varseltekst.monitor.config
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import mu.KotlinLogging
-import no.nav.tms.varseltekst.monitor.common.database.Database
+import no.nav.tms.varseltekst.monitor.database.Database
 
 class PostgresDatabase(env: Environment) : Database {
 

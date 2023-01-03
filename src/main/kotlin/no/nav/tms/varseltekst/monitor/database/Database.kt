@@ -1,8 +1,6 @@
-package no.nav.tms.varseltekst.monitor.common.database
+package no.nav.tms.varseltekst.monitor.database
 
 import com.zaxxer.hikari.HikariDataSource
-import no.nav.tms.varseltekst.monitor.common.exceptions.RetriableDatabaseException
-import no.nav.tms.varseltekst.monitor.common.exceptions.UnretriableDatabaseException
 import org.slf4j.Logger
 import java.sql.*
 

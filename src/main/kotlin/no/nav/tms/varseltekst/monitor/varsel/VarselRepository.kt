@@ -1,7 +1,8 @@
 package no.nav.tms.varseltekst.monitor.varsel
 
-import no.nav.tms.varseltekst.monitor.common.LocalDateTimeHelper
-import no.nav.tms.varseltekst.monitor.common.database.Database
+import no.nav.tms.varseltekst.monitor.coalesce.TekstTable
+import no.nav.tms.varseltekst.monitor.util.LocalDateTimeHelper
+import no.nav.tms.varseltekst.monitor.database.Database
 
 class VarselRepository(private val database: Database) {
 

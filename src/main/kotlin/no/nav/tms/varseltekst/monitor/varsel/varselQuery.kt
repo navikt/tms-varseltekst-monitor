@@ -1,16 +1,18 @@
 package no.nav.tms.varseltekst.monitor.varsel
 
+import no.nav.tms.varseltekst.monitor.coalesce.TekstTable
+import no.nav.tms.varseltekst.monitor.coalesce.TekstTable.*
+import no.nav.tms.varseltekst.monitor.util.LocalDateTimeHelper
 import java.sql.Connection
 import java.sql.PreparedStatement
-import java.sql.Statement
 import java.sql.Types
 
-private fun upsertTekstQuery(table: String) = """
-    WITH input_tekst(tekst) AS (
-        VALUES(?)
+private fun upsertTekstQuery(table: TekstTable) = """
+    WITH input_tekst(tekst, first_seen_at) AS (
+        VALUES(?, ?)
     ),
          inserted_tekst AS (
-             INSERT INTO $table(tekst) SELECT tekst FROM input_tekst
+             INSERT INTO $table(tekst, first_seen_at) SELECT tekst, first_seen_at FROM input_tekst
                  ON CONFLICT (tekst) DO NOTHING
              RETURNING id
          )
@@ -20,15 +22,15 @@ private fun upsertTekstQuery(table: String) = """
         JOIN $table t USING (tekst);
 """.trimIndent()
 
-private val upsertWebTekstIdQuery = upsertTekstQuery("web_tekst")
-private val upsertSmsTekstIdQuery = upsertTekstQuery("sms_tekst")
-private val upsertEpostTittelIdQuery = upsertTekstQuery("epost_tittel")
-private val upsertEpostTekstIdQuery = upsertTekstQuery("epost_tekst")
+private val upsertWebTekstQuery = upsertTekstQuery(WEB_TEKST)
+private val upsertSmsTekstQuery = upsertTekstQuery(SMS_TEKST)
+private val upsertEpostTittelQuery = upsertTekstQuery(EPOST_TITTEL)
+private val upsertEpostTekstQuery = upsertTekstQuery(EPOST_TEKST)
 
 private val createVarselQuery = """
     insert into varsel (
         event_id,
-        eventType,
+        event_type,
         produsent_namespace,
         produsent_appnavn,
         eksternVarsling,
@@ -38,15 +40,16 @@ private val createVarselQuery = """
         sms_tekst,
         epost_tittel,
         epost_tekst,
+        varseltidspunkt,
         tidspunkt
-    ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     on conflict do nothing
 """.trimIndent()
 
-fun Connection.upsertWebTekst(tekst: String): Int = upsertTekst(upsertWebTekstIdQuery, tekst)
-fun Connection.upsertSmsTekst(tekst: String): Int = upsertTekst(upsertSmsTekstIdQuery, tekst)
-fun Connection.upsertEpostTittel(tittel: String): Int = upsertTekst(upsertEpostTittelIdQuery, tittel)
-fun Connection.upsertEpostTekst(tekst: String): Int = upsertTekst(upsertEpostTekstIdQuery, tekst)
+fun Connection.upsertWebTekst(tekst: String): Int = upsertTekst(upsertWebTekstQuery, tekst)
+fun Connection.upsertSmsTekst(tekst: String): Int = upsertTekst(upsertSmsTekstQuery, tekst)
+fun Connection.upsertEpostTittel(tittel: String): Int = upsertTekst(upsertEpostTittelQuery, tittel)
+fun Connection.upsertEpostTekst(tekst: String): Int = upsertTekst(upsertEpostTekstQuery, tekst)
 
 fun Connection.insertVarsel(varseltekster: VarselDto) =
     prepareStatement(createVarselQuery).use {
@@ -66,12 +69,14 @@ private fun PreparedStatement.setParameters(varsel: VarselDto) {
     setObject(9, varsel.smsTekstRef, Types.INTEGER)
     setObject(10, varsel.epostTittelRef, Types.INTEGER)
     setObject(11, varsel.epostTekstRef, Types.INTEGER)
-    setObject(12, varsel.tidspunkt, Types.TIMESTAMP)
+    setObject(12, varsel.varseltidspunkt, Types.TIMESTAMP)
+    setObject(13, varsel.tidspunkt, Types.TIMESTAMP)
 }
 
 private fun Connection.upsertTekst(selectQuery: String, tekst: String): Int {
     return prepareStatement(selectQuery).use {
         it.setString(1, tekst)
+        it.setObject(2, LocalDateTimeHelper.nowAtUtc(), Types.TIMESTAMP)
 
         it.executeQuery().let { result ->
             if (result.next()) {
