@@ -26,7 +26,7 @@ repositories {
 }
 
 dependencies {
-    implementation(DittNAV.Common.utils)
+    implementation(DittNAVCommonLib.utils)
     implementation(Flyway.core)
     implementation(Hikari.cp)
     implementation(Influxdb.java)
@@ -39,14 +39,11 @@ dependencies {
     implementation(Prometheus.common)
     implementation(Prometheus.hotspot)
     implementation(Prometheus.logback)
-    implementation("com.github.navikt:rapids-and-rivers:2022100711511665136276.49acbaae4ed4")
+    implementation(RapidsAndRivers.rapidsAndRivers)
 
     testImplementation(Junit.api)
     testImplementation(Junit.engine)
     testImplementation(Junit.params)
-    testImplementation(Kafka.Apache.kafka_2_12)
-    testImplementation(Kafka.Apache.streams)
-    testImplementation(Kafka.Confluent.schemaRegistry)
     testImplementation(Mockk.mockk)
     testImplementation(NAV.kafkaEmbedded)
     testImplementation(TestContainers.postgresql)
@@ -66,17 +63,6 @@ tasks {
             exceptionFormat = TestExceptionFormat.FULL
             events("passed", "skipped", "failed")
         }
-    }
-
-    register("runServer", JavaExec::class) {
-        println("Setting default environment variables for running with DittNAV docker-compose")
-        DockerComposeDefaults.environomentVariables.forEach { (name, value) ->
-            println("Setting the environment variable $name")
-            environment(name, value)
-        }
-
-        main = application.mainClass.get()
-        classpath = sourceSets["main"].runtimeClasspath
     }
 }
 
