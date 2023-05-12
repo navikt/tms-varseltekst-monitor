@@ -10,9 +10,11 @@ fun varselJson(
     prefererteKanaler: List<String> = listOf("SMS", "EPOST"),
     smsVarslingstekst: String? = null,
     epostVarslingstekst: String? = null,
-    epostVarslingstittel: String? = null
+    epostVarslingstittel: String? = null,
+    source: String? = null
 ) = """{
         "@event_name": "aktivert",
+        ${if (source != null) "\"@source\":\"$source\"," else ""}
         "varselType": "$type",
         "namespace": "namespace",
         "appnavn": "appnavn",
