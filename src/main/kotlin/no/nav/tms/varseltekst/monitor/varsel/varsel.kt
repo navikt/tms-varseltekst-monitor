@@ -1,8 +1,36 @@
 package no.nav.tms.varseltekst.monitor.varsel
 
 import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 
-data class Varsel(
+data class AktivertVarsel(
+    val type: String,
+    val varselId: String,
+    val innhold: Innhold,
+    val produsent: Produsent,
+    val eksternVarslingBestilling: EksternVarslingBestilling? = null,
+    val opprettet: ZonedDateTime
+)
+
+data class Innhold(
+    val tekst: String,
+    val link: String?
+)
+
+data class Produsent(
+    val namespace: String,
+    val appnavn: String
+)
+
+data class EksternVarslingBestilling(
+    val prefererteKanaler: List<String>,
+    val smsVarslingstekst: String?,
+    val epostVarslingstekst: String?,
+    val epostVarslingstittel: String?,
+)
+
+data class VarselOversikt(
     val eventId: String,
     val eventType: String,
     val producerNamespace: String,

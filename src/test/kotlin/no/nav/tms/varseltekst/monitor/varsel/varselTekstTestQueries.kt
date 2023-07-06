@@ -15,7 +15,7 @@ fun Connection.insertTekst(table: TekstTable, tekst: String) {
     }
 }
 
-fun Connection.selectVarsel(eventId: String): Varsel {
+fun Connection.selectVarsel(eventId: String): VarselOversikt {
     prepareStatement("""
         SELECT v.*, wt.tekst as webTekst, st.tekst as smsTekst, ett.tekst as epostTittel, ete.tekst as epostTekst
           FROM varsel v
@@ -30,7 +30,7 @@ fun Connection.selectVarsel(eventId: String): Varsel {
         val result = it.executeQuery()
 
         return if (result.next()) {
-            Varsel(
+            VarselOversikt(
                 eventId = result.getString("event_id"),
                 eventType = result.getString("event_type"),
                 producerNamespace = result.getString("produsent_namespace"),

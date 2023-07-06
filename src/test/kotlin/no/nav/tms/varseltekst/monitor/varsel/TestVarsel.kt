@@ -31,7 +31,7 @@ object TestVarsel {
         epostTittel: String? = defaultEpostTittel,
         epostTekst: String? = defaultEpostTekst,
         varseltidspunkt: LocalDateTime = defaultVarseltidspunkt,
-    ) = Varsel(
+    ) = VarselOversikt(
         eventId = eventId,
         eventType = eventType,
         producerNamespace = producerNamespace,

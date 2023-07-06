@@ -6,7 +6,7 @@ import kotlinx.coroutines.runBlocking
 import no.nav.tms.varseltekst.monitor.coalesce.rules.*
 import no.nav.tms.varseltekst.monitor.config.*
 import no.nav.tms.varseltekst.monitor.varsel.TestVarsel
-import no.nav.tms.varseltekst.monitor.varsel.Varsel
+import no.nav.tms.varseltekst.monitor.varsel.VarselOversikt
 import no.nav.tms.varseltekst.monitor.varsel.VarselRepository
 import no.nav.tms.varseltekst.monitor.varsel.selectVarsel
 import org.junit.jupiter.api.AfterAll
@@ -85,7 +85,7 @@ internal class CoalescingBacklogJobTest {
 
     }
 
-    private fun createInDb(varsel: Varsel) {
+    private fun createInDb(varsel: VarselOversikt) {
         VarselRepository(database).persistVarsel(varsel)
     }
 
@@ -108,7 +108,7 @@ internal class CoalescingBacklogJobTest {
         }
     }
 
-    private fun getVarsel(eventId: String): Varsel {
+    private fun getVarsel(eventId: String): VarselOversikt {
         return database.dbQuery {
             selectVarsel(eventId)
         }

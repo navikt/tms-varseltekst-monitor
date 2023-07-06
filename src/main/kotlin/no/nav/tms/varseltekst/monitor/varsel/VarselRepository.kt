@@ -1,12 +1,11 @@
 package no.nav.tms.varseltekst.monitor.varsel
 
-import no.nav.tms.varseltekst.monitor.coalesce.TekstTable
 import no.nav.tms.varseltekst.monitor.util.LocalDateTimeHelper
 import no.nav.tms.varseltekst.monitor.database.Database
 
 class VarselRepository(private val database: Database) {
 
-    fun persistVarsel(varsel: Varsel) {
+    fun persistVarsel(varsel: VarselOversikt) {
         val varselDto = VarselDto (
             eventId = varsel.eventId,
             eventType = varsel.eventType,

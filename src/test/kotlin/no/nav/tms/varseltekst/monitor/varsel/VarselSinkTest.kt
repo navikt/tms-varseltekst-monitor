@@ -136,7 +136,7 @@ internal class VarselSinkTest {
     }
 
     @Test
-    fun `ignorerer aktivert-eventer fra tms-varsel-authority`() {
+    fun `ignorerer aktivert-eventer fra aggregator`() {
         val testRapid = TestRapid()
         testRapid.registerSink(createVarselSink(NumberCensorRule))
 
@@ -148,7 +148,7 @@ internal class VarselSinkTest {
         testRapid.sendTestMessage(aggregatorBeskjedNy)
         testRapid.sendTestMessage(varselAuthorityBeskjed)
 
-        database.dbQuery { antallTekster(WEB_TEKST) } shouldBe 2
+        database.dbQuery { antallTekster(WEB_TEKST) } shouldBe 1
     }
 
     private fun createVarselSink(vararg rules: CoalescingRule) = VarselSink(
