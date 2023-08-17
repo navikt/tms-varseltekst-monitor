@@ -4,6 +4,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
 import no.nav.helse.rapids_rivers.testsupport.TestRapid
+import no.nav.tms.varseltekst.monitor.coalesce.BacklogRepository
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingRepository
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingService
 import no.nav.tms.varseltekst.monitor.coalesce.TekstTable.*
@@ -20,13 +21,12 @@ internal class VarselSinkTest {
 
     private val varselRepository = VarselRepository(database)
     private val coalescingRepository = CoalescingRepository(database)
+    private val backlogRepository = BacklogRepository(database)
 
 
     @AfterEach
     fun reset() {
-        database.dbQuery {
-            clearAllTables()
-        }
+        database.clearAllTables()
     }
 
     @Test
@@ -47,7 +47,7 @@ internal class VarselSinkTest {
 
         testRapid.sendTestMessage(varsel)
 
-        val result = database.dbQuery { selectVarsel("123") }
+        val result = database.selectVarsel("123")
 
         result.eventId shouldBe "123"
         result.eventType shouldBe "beskjed"
@@ -88,15 +88,15 @@ internal class VarselSinkTest {
         testRapid.sendTestMessage(varsel1)
         testRapid.sendTestMessage(varsel2)
 
-        database.dbQuery { antallTekster(WEB_TEKST) } shouldBe 2
-        database.dbQuery { antallTekster(SMS_TEKST) } shouldBe 1
-        database.dbQuery { antallTekster(EPOST_TITTEL) } shouldBe 1
-        database.dbQuery { antallTekster(EPOST_TEKST) } shouldBe 1
+        database.antallTekster(WEB_TEKST) shouldBe 2
+        database.antallTekster(SMS_TEKST) shouldBe 1
+        database.antallTekster(EPOST_TITTEL) shouldBe 1
+        database.antallTekster(EPOST_TEKST) shouldBe 1
 
-        database.dbQuery { getTekster(WEB_TEKST) } shouldContainAll listOf("tekst for web", "annen tekst for web")
-        database.dbQuery { getTekster(SMS_TEKST) } shouldContain "smsTekst"
-        database.dbQuery { getTekster(EPOST_TITTEL) } shouldContain "epostTittel"
-        database.dbQuery { getTekster(EPOST_TEKST) } shouldContain "epostTekst"
+        database.getTekster(WEB_TEKST) shouldContainAll listOf("tekst for web", "annen tekst for web")
+        database.getTekster(SMS_TEKST) shouldContain "smsTekst"
+        database.getTekster(EPOST_TITTEL) shouldContain "epostTittel"
+        database.getTekster(EPOST_TEKST) shouldContain "epostTekst"
     }
 
     @Test
@@ -129,10 +129,10 @@ internal class VarselSinkTest {
         testRapid.sendTestMessage(varsel2)
         testRapid.sendTestMessage(varsel3)
 
-        database.dbQuery { antallTekster(WEB_TEKST) } shouldBe 3
-        database.dbQuery { antallTekster(SMS_TEKST) } shouldBe 1
+        database.antallTekster(WEB_TEKST) shouldBe 3
+        database.antallTekster(SMS_TEKST) shouldBe 1
 
-        database.dbQuery { getTekster(SMS_TEKST) } shouldContain "sms-tekst ***"
+        database.getTekster(SMS_TEKST) shouldContain "sms-tekst ***"
     }
 
     @Test
@@ -148,11 +148,11 @@ internal class VarselSinkTest {
         testRapid.sendTestMessage(aggregatorBeskjedNy)
         testRapid.sendTestMessage(varselAuthorityBeskjed)
 
-        database.dbQuery { antallTekster(WEB_TEKST) } shouldBe 1
+        database.antallTekster(WEB_TEKST) shouldBe 1
     }
 
     private fun createVarselSink(vararg rules: CoalescingRule) = VarselSink(
-        coalescingService = CoalescingService.initialize(coalescingRepository, rules.toList()),
+        coalescingService = CoalescingService.initialize(coalescingRepository, backlogRepository, rules.toList()),
         varselRepository = varselRepository
     )
 }

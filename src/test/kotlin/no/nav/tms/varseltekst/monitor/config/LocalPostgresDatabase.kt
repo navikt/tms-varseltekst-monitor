@@ -2,7 +2,8 @@ package no.nav.tms.varseltekst.monitor.config
 
 import com.zaxxer.hikari.HikariDataSource
 import kotlinx.coroutines.runBlocking
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotliquery.queryOf
 import no.nav.tms.varseltekst.monitor.database.Database
 import org.flywaydb.core.Flyway
 import org.slf4j.Logger
@@ -11,8 +12,6 @@ import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.containers.wait.strategy.WaitAllStrategy
 
 class LocalPostgresDatabase private constructor() : Database {
-
-    override val log = KotlinLogging.logger {}
 
     private val memDataSource: HikariDataSource
     private val container = PostgreSQLContainer("postgres:14.5")
@@ -25,7 +24,7 @@ class LocalPostgresDatabase private constructor() : Database {
         }
 
         fun migratedDb(): LocalPostgresDatabase {
-            instance.dbQuery {
+            instance.run {
                 deleteWebTekst()
                 deleteSmsTekst()
                 deleteEpostTittel()
@@ -56,7 +55,8 @@ class LocalPostgresDatabase private constructor() : Database {
             jdbcUrl = container.jdbcUrl
             username = container.username
             password = container.password
-            isAutoCommit = false
+            isAutoCommit = true
+            maximumPoolSize = 3
             validate()
         }
     }
@@ -73,9 +73,7 @@ class LocalPostgresDatabase private constructor() : Database {
     }
 
     // Workaround to fix migration involving missing user.
-    private fun createCloudSqlIAMUser() {
-        dbQuery {
-            prepareStatement("create user cloudsqliamuser").executeUpdate()
-        }
+    private fun createCloudSqlIAMUser() = update {
+        queryOf("create user cloudsqliamuser")
     }
 }

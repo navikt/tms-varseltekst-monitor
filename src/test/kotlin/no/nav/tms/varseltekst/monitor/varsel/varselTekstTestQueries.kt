@@ -1,64 +1,61 @@
 package no.nav.tms.varseltekst.monitor.varsel
 
+import kotliquery.Row
+import kotliquery.queryOf
 import no.nav.tms.varseltekst.monitor.coalesce.TekstTable
-import no.nav.tms.varseltekst.monitor.database.getUtcDateTime
-import no.nav.tms.varseltekst.monitor.database.list
+import no.nav.tms.varseltekst.monitor.database.Database
 import no.nav.tms.varseltekst.monitor.util.LocalDateTimeHelper.nowAtUtc
-import java.sql.Connection
-import java.sql.Types
 
-fun Connection.insertTekst(table: TekstTable, tekst: String) {
-    prepareStatement("INSERT INTO $table(tekst, first_seen_at) values(?, ?)").use {
-        it.setString(1, tekst)
-        it.setObject(2, nowAtUtc(), Types.TIMESTAMP)
-        it.executeUpdate()
-    }
+fun Database.insertTekst(table: TekstTable, tekst: String) = update {
+    queryOf("INSERT INTO $table(tekst, first_seen_at) values(:tekst, :firstSeenAt)",
+        mapOf(
+            "tekst" to tekst,
+            "firstSeenAt" to nowAtUtc()
+        )
+    )
 }
 
-fun Connection.selectVarsel(eventId: String): VarselOversikt {
-    prepareStatement("""
+fun Database.selectVarsel(eventId: String) = single {
+    queryOf("""
         SELECT v.*, wt.tekst as webTekst, st.tekst as smsTekst, ett.tekst as epostTittel, ete.tekst as epostTekst
           FROM varsel v
             JOIN web_tekst wt on v.web_tekst = wt.id
             LEFT JOIN sms_tekst st on v.sms_tekst = st.id
             LEFT JOIN epost_tittel ett on v.epost_tittel = ett.id
             LEFT JOIN epost_tekst ete on v.epost_tekst = ete.id
-        WHERE v.event_id = ?
-    """.trimIndent()).use {
-        it.setString(1, eventId)
-
-        val result = it.executeQuery()
-
-        return if (result.next()) {
-            VarselOversikt(
-                eventId = result.getString("event_id"),
-                eventType = result.getString("event_type"),
-                producerNamespace = result.getString("produsent_namespace"),
-                producerAppnavn = result.getString("produsent_appnavn"),
-                eksternVarsling = result.getBoolean("eksternVarsling"),
-                preferertKanalSms = result.getBoolean("sms_preferert"),
-                preferertKanalEpost = result.getBoolean("epost_preferert"),
-                webTekst = result.getString("webTekst"),
-                smsTekst = result.getString("smsTekst"),
-                epostTittel = result.getString("epostTittel"),
-                epostTekst = result.getString("epostTekst"),
-                varseltidspunkt = result.getUtcDateTime("varseltidspunkt"),
-            )
-        } else {
-            throw IllegalStateException()
-        }
-    }
+        WHERE v.event_id = :eventId
+    """,
+        mapOf("eventId" to eventId)
+    )
+        .map(toVarseloversikt())
+        .asSingle
 }
 
-fun Connection.antallTekster(type: TekstTable): Int = prepareStatement("select count(*) as antall from ${type.name}").use {
-    it.executeQuery().run {
-        next()
-        getInt("antall")
-    }
+private fun toVarseloversikt(): (Row) -> VarselOversikt = { result ->
+    VarselOversikt(
+        eventId = result.string("event_id"),
+        eventType = result.string("event_type"),
+        producerNamespace = result.string("produsent_namespace"),
+        producerAppnavn = result.string("produsent_appnavn"),
+        eksternVarsling = result.boolean("eksternVarsling"),
+        preferertKanalSms = result.boolean("sms_preferert"),
+        preferertKanalEpost = result.boolean("epost_preferert"),
+        webTekst = result.string("webTekst"),
+        smsTekst = result.stringOrNull("smsTekst"),
+        epostTittel = result.stringOrNull("epostTittel"),
+        epostTekst = result.stringOrNull("epostTekst"),
+        varseltidspunkt = result.localDateTime("varseltidspunkt")
+    )
 }
 
-fun Connection.getTekster(type: TekstTable): List<String> = prepareStatement("select tekst from ${type.name}").use {
-    it.executeQuery().list {
-        getString("tekst")
-    }
+fun Database.antallTekster(type: TekstTable): Int = single {
+    queryOf("select count(*) as antall from ${type.name}")
+        .map { it.int("antall") }
+        .asSingle
+}
+
+fun Database.getTekster(type: TekstTable): List<String> = list {
+    queryOf("select tekst from ${type.name}")
+        .map { it.string("tekst") }
+        .asList
 }

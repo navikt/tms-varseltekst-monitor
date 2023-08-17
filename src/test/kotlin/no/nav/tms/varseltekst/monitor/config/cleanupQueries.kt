@@ -1,27 +1,29 @@
 package no.nav.tms.varseltekst.monitor.config
 
+import kotliquery.queryOf
 import no.nav.tms.varseltekst.monitor.coalesce.TekstTable
+import no.nav.tms.varseltekst.monitor.database.Database
 import java.sql.Connection
 
-fun Connection.deleteVarsel() = deleteFrom("varsel")
+fun Database.deleteVarsel() = deleteFrom("varsel")
 
-fun Connection.deleteWebTekst() = deleteFrom("web_tekst")
-fun Connection.deleteSmsTekst() = deleteFrom("sms_tekst")
-fun Connection.deleteEpostTittel() = deleteFrom("epost_tittel")
-fun Connection.deleteEpostTekst() = deleteFrom("epost_tekst")
-fun Connection.deleteTekst(tekstTable: TekstTable) = deleteFrom(tekstTable.name)
+fun Database.deleteWebTekst() = deleteFrom("web_tekst")
+fun Database.deleteSmsTekst() = deleteFrom("sms_tekst")
+fun Database.deleteEpostTittel() = deleteFrom("epost_tittel")
+fun Database.deleteEpostTekst() = deleteFrom("epost_tekst")
+fun Database.deleteTekst(tekstTable: TekstTable) = deleteFrom(tekstTable.name)
 
-fun Connection.deleteCoalescingRule() = deleteFrom("coalescing_rule")
-fun Connection.deleteCoalescingBackLog() = deleteFrom("coalescing_backlog")
+fun Database.deleteCoalescingRule() = deleteFrom("coalescing_rule")
+fun Database.deleteCoalescingBackLog() = deleteFrom("coalescing_backlog")
 
-fun Connection.deleteCoalescingHistoryWebTekst() = deleteFrom("coalescing_history_web_tekst")
-fun Connection.deleteCoalescingHistorySmsTekst() = deleteFrom("coalescing_history_sms_tekst")
-fun Connection.deleteCoalescingHistoryEpostTittel() = deleteFrom("coalescing_history_epost_tittel")
-fun Connection.deleteCoalescingHistoryEpostTekst() = deleteFrom("coalescing_history_epost_tekst")
+fun Database.deleteCoalescingHistoryWebTekst() = deleteFrom("coalescing_history_web_tekst")
+fun Database.deleteCoalescingHistorySmsTekst() = deleteFrom("coalescing_history_sms_tekst")
+fun Database.deleteCoalescingHistoryEpostTittel() = deleteFrom("coalescing_history_epost_tittel")
+fun Database.deleteCoalescingHistoryEpostTekst() = deleteFrom("coalescing_history_epost_tekst")
 
-private fun Connection.deleteFrom(tableName: String) = prepareStatement("DELETE from $tableName").executeUpdate()
+private fun Database.deleteFrom(tableName: String) = update { queryOf("DELETE from $tableName") }
 
-fun Connection.clearAllTables() {
+fun Database.clearAllTables() {
     deleteCoalescingHistoryWebTekst()
     deleteCoalescingHistorySmsTekst()
     deleteCoalescingHistoryEpostTittel()

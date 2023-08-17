@@ -1,24 +1,12 @@
 package no.nav.tms.varseltekst.monitor.database
 
-import java.sql.Connection
-import java.sql.PreparedStatement
-import java.sql.ResultSet
-import java.time.LocalDateTime
+import kotliquery.Query
+import kotliquery.TransactionalSession
+import kotliquery.action.NullableResultQueryAction
 
-fun <T> ResultSet.list(result: ResultSet.() -> T): List<T> =
-    mutableListOf<T>().apply {
-        while (next()) {
-            add(result())
-        }
-    }
+fun TransactionalSession.updateInTx(queryBuilder: () -> Query) = run(queryBuilder.invoke().asUpdate)
 
-fun ResultSet.getUtcDateTime(columnLabel: String): LocalDateTime = getTimestamp(columnLabel).toLocalDateTime()
+fun <T> TransactionalSession.singleOrNullInTx(queryBuilder: () -> NullableResultQueryAction<T>) = run(queryBuilder.invoke())
 
-fun Connection.executeBatchUpdateQuery(sql: String, paramInit: PreparedStatement.() -> Unit) {
-    autoCommit = false
-    prepareStatement(sql).use { statement ->
-        statement.paramInit()
-        statement.executeBatch()
-    }
-    commit()
-}
+fun <T> TransactionalSession.singleInTx(queryBuilder: () -> NullableResultQueryAction<T>) = singleOrNullInTx(queryBuilder)
+    ?: throw IllegalStateException("Found no rows matching query")

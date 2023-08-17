@@ -2,12 +2,9 @@ package no.nav.tms.varseltekst.monitor.config
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import mu.KotlinLogging
 import no.nav.tms.varseltekst.monitor.database.Database
 
 class PostgresDatabase(env: Environment) : Database {
-
-    override val log = KotlinLogging.logger {}
 
     private val envDataSource: HikariDataSource
 
@@ -40,7 +37,7 @@ class PostgresDatabase(env: Environment) : Database {
                 connectionTimeout = 4000
                 validationTimeout = 1000
                 idleTimeout = 30000
-                isAutoCommit = false
+                isAutoCommit = true
                 transactionIsolation = "TRANSACTION_REPEATABLE_READ"
                 username = env.dbUser
                 password = env.dbPassword

@@ -3,8 +3,12 @@ package no.nav.tms.varseltekst.monitor.coalesce
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.runBlocking
+import kotliquery.TransactionalSession
+import kotliquery.queryOf
 import no.nav.tms.varseltekst.monitor.coalesce.rules.*
 import no.nav.tms.varseltekst.monitor.config.*
+import no.nav.tms.varseltekst.monitor.database.Database
+import no.nav.tms.varseltekst.monitor.database.updateInTx
 import no.nav.tms.varseltekst.monitor.varsel.TestVarsel
 import no.nav.tms.varseltekst.monitor.varsel.VarselOversikt
 import no.nav.tms.varseltekst.monitor.varsel.VarselRepository
@@ -23,6 +27,7 @@ internal class CoalescingBacklogJobTest {
     private val greetingCensorRule: CoalescingRuleWrapper
     private val coalescingService: CoalescingService
 
+    private val backlogRepository = BacklogRepository(database)
     private val coalescingRepository = CoalescingRepository(database)
 
     init {
@@ -34,14 +39,12 @@ internal class CoalescingBacklogJobTest {
 
     @AfterEach
     fun cleanUp() {
-        database.dbQuery {
-            deleteFromDb()
-        }
+        database.deleteFromDb()
     }
 
     @AfterAll
     fun finalCleanUp() {
-        database.dbQuery {
+        database.run {
             deleteFromDb()
             deleteCoalescingRule()
         }
@@ -64,7 +67,7 @@ internal class CoalescingBacklogJobTest {
         createInDb(varsel)
         generateBacklog(numberCensorRule)
 
-        val backlogJob = CoalescingBacklogJob(coalescingRepository, coalescingService)
+        val backlogJob = CoalescingBacklogJob(coalescingRepository, backlogRepository, coalescingService)
 
         runBlocking {
             backlogJob.start()
@@ -80,19 +83,12 @@ internal class CoalescingBacklogJobTest {
         updatedVarsel.epostTekst shouldBe varsel.epostTekst
     }
 
-    @Test
-    fun `Applies multiple rules in order of creation`() {
-
-    }
-
     private fun createInDb(varsel: VarselOversikt) {
         VarselRepository(database).persistVarsel(varsel)
     }
 
     private fun createInDb(rule: CoalescingRule): CoalescingRuleWrapper {
-        val ruleDto = database.dbQuery {
-            insertRule(rule)
-        }
+        val ruleDto = database.insertRule(rule)
 
         return CoalescingRuleWrapper(
             definition = rule,
@@ -101,20 +97,30 @@ internal class CoalescingBacklogJobTest {
     }
 
     private fun generateBacklog(rule: CoalescingRuleWrapper) {
-        database.dbQuery {
-            TekstTable.values().forEach {
-                insertIntoBacklog(rule.definition, it)
-            }
+        TekstTable.values().forEach {
+            database.insertIntoBacklog(rule.definition, it)
         }
     }
 
     private fun getVarsel(eventId: String): VarselOversikt {
-        return database.dbQuery {
-            selectVarsel(eventId)
-        }
+        return database.selectVarsel(eventId)
     }
 
-    private fun Connection.deleteFromDb() {
+    private fun insertBacklogQuery(table: TekstTable) = """
+        insert into coalescing_backlog(tekst_table, rule_id, tekst_id)
+            select '$table', rule.id, tekst.id from $table as tekst
+                join coalescing_rule as rule on rule.name = :rule
+    """
+
+    private fun Database.insertIntoBacklog(rule: CoalescingRule, table: TekstTable) = update {
+        queryOf(
+            insertBacklogQuery(table),
+            mapOf("rule" to rule.name)
+        )
+    }
+
+
+    private fun Database.deleteFromDb() {
         deleteCoalescingHistoryWebTekst()
         deleteCoalescingHistorySmsTekst()
         deleteCoalescingHistoryEpostTittel()

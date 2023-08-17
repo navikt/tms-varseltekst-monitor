@@ -14,11 +14,12 @@ internal class CoalescingServiceInitializationTest {
 
     private val database = LocalPostgresDatabase.migratedDb()
 
-    private val repository = CoalescingRepository(database)
+    private val coalescingRepository = CoalescingRepository(database)
+    private val backlogRepository = BacklogRepository(database)
 
     @AfterEach
     fun cleanup() {
-        database.dbQuery {
+        database.run {
             deleteCoalescingBackLog()
             deleteCoalescingRule()
         }
@@ -31,11 +32,9 @@ internal class CoalescingServiceInitializationTest {
             GreetingCensorRule
         )
 
-        CoalescingService.initialize(repository, rules)
+        CoalescingService.initialize(coalescingRepository, backlogRepository, rules)
 
-        val ruleDtos = database.dbQuery {
-            selectCoalescingRules()
-        }
+        val ruleDtos = coalescingRepository.getCoalescingRules()
 
         validateNames(rules, ruleDtos)
         validateDescriptions(rules, ruleDtos)
@@ -57,7 +56,7 @@ internal class CoalescingServiceInitializationTest {
         delimiter = '|'
     )
     fun `Creates entries in backlog for existing texts when a new rule is added`(table: TekstTable, texts: String, expected: Int) {
-        database.dbQuery {
+        database.run {
             deleteCoalescingBackLog()
             deleteTekst(table)
         }
@@ -68,11 +67,9 @@ internal class CoalescingServiceInitializationTest {
 
         insertTexts(table, texts)
 
-        CoalescingService.initialize(repository, rules)
+        CoalescingService.initialize(coalescingRepository, backlogRepository, rules)
 
-        val numberInBacklog = database.dbQuery {
-            countBackLog(table)
-        }
+        val numberInBacklog = database.countBackLog(table)
 
         numberInBacklog shouldBe expected
     }
@@ -97,9 +94,7 @@ internal class CoalescingServiceInitializationTest {
         val textList = parseList(texts)
 
         textList.forEach { text ->
-            database.dbQuery {
-                insertTekst(table, text)
-            }
+            database.insertTekst(table, text)
         }
     }
 
