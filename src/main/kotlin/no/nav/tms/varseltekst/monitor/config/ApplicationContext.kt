@@ -1,5 +1,6 @@
 package no.nav.tms.varseltekst.monitor.config
 
+import no.nav.tms.varseltekst.monitor.coalesce.BacklogRepository
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingBacklogJob
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingRepository
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingService
@@ -15,6 +16,7 @@ class ApplicationContext {
     val database: Database = PostgresDatabase(environment)
 
     private val coalescingRepository = CoalescingRepository(database)
+    private val backlogRepository = BacklogRepository(database)
     private val varselRepository = VarselRepository(database)
 
     private lateinit var coalescingService: CoalescingService
@@ -27,8 +29,8 @@ class ApplicationContext {
             DayOfWeekDateTimeRule
         )
 
-        coalescingService = CoalescingService.initialize(coalescingRepository, rulesList)
-        coalescingBacklogJob = CoalescingBacklogJob(coalescingRepository, coalescingService)
+        coalescingService = CoalescingService.initialize(coalescingRepository, backlogRepository, rulesList)
+        coalescingBacklogJob = CoalescingBacklogJob(coalescingRepository, backlogRepository, coalescingService)
     }
 }
 

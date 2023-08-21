@@ -35,15 +35,19 @@ class CoalescingService(private val coalescingRules: List<CoalescingRuleWrapper>
     }
 
     companion object {
-        fun initialize(repository: CoalescingRepository, rules: List<CoalescingRule>): CoalescingService {
+        fun initialize(
+            coalescingRepository: CoalescingRepository,
+            backlogRepository: BacklogRepository,
+            rules: List<CoalescingRule>
+        ): CoalescingService {
 
-            val newRules = findNewRules(repository, rules)
+            val newRules = findNewRules(coalescingRepository, rules)
 
             if (newRules.isNotEmpty()) {
-                repository.persistRulesAndBacklog(newRules)
+                backlogRepository.persistRulesAndBacklog(newRules)
             }
 
-            return CoalescingService(wrapDefinitionsWithDtos(repository, rules))
+            return CoalescingService(wrapDefinitionsWithDtos(coalescingRepository, rules))
         }
 
         private fun findNewRules(repository: CoalescingRepository, rules: List<CoalescingRule>): List<CoalescingRule> {

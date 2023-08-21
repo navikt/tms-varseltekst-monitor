@@ -1,11 +1,12 @@
 package no.nav.tms.varseltekst.monitor.coalesce
 
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.tms.varseltekst.monitor.util.PeriodicJob
 import kotlin.time.Duration.Companion.milliseconds
 
 class CoalescingBacklogJob(
     private val coalescingRepository: CoalescingRepository,
+    private val backlogRepository: BacklogRepository,
     private val coalescingService: CoalescingService
 ): PeriodicJob(100.milliseconds) {
 
@@ -16,10 +17,10 @@ class CoalescingBacklogJob(
     }
 
     private suspend fun processCoalescingBacklog() {
-        val nextEntry = coalescingRepository.getNextBacklogEntry()
+        val nextEntry = backlogRepository.getNextBacklogEntry()
 
         if (nextEntry == null) {
-            log.info("Ferdig med prosessering av sammenslåings-backlog. Stopper periodisk jobb.")
+            log.info { "Ferdig med prosessering av sammenslåings-backlog. Stopper periodisk jobb." }
             stop()
         } else {
             processBacklogEntry(nextEntry)
