@@ -21,8 +21,6 @@ spec:
     min: 1
     max: 1
     cpuThresholdPercentage: 50
-  ingresses:
-    - "https://tms-varseltekst-monitor.intern.nav.no"
   resources:
     limits:
       cpu: "1"
@@ -39,11 +37,11 @@ spec:
         highAvailability: false
         diskSize: 50
         diskAutoresize: false
-        autoBackupTime: "03:00"
+        autoBackupHour: 3
         databases:
           - name: varseltekster
             envVarPrefix: DB
-        maintenanceWindow:
+        maintenance:
           day: 1
           hour: 4
         cascadingDelete: false
