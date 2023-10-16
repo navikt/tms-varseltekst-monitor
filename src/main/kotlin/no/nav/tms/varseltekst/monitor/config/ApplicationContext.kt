@@ -4,8 +4,7 @@ import no.nav.tms.varseltekst.monitor.coalesce.BacklogRepository
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingBacklogJob
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingRepository
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingService
-import no.nav.tms.varseltekst.monitor.coalesce.rules.CoalescingRule
-import no.nav.tms.varseltekst.monitor.coalesce.rules.DayOfWeekDateTimeRule
+import no.nav.tms.varseltekst.monitor.coalesce.rules.*
 import no.nav.tms.varseltekst.monitor.database.Database
 import no.nav.tms.varseltekst.monitor.varsel.VarselRepository
 import no.nav.tms.varseltekst.monitor.varsel.VarselSink
@@ -26,7 +25,11 @@ class ApplicationContext {
 
     fun initCoalescingService() {
         val rulesList = listOf(
-            DayOfWeekDateTimeRule
+            DayOfWeekDateTimeRule,
+            DokumentTittelRule,
+            InntektsmeldingRule,
+            UtvidetSykepengerRule,
+            FullmaktNavnRule
         )
 
         coalescingService = CoalescingService.initialize(coalescingRepository, backlogRepository, rulesList)
