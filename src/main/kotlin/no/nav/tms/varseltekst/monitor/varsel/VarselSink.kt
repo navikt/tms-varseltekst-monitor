@@ -1,6 +1,7 @@
 package no.nav.tms.varseltekst.monitor.varsel
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.helse.rapids_rivers.MessageProblems
@@ -18,7 +19,8 @@ class VarselSink(
     private val varselRepository: VarselRepository,
 ) : River.PacketListener, PacketValidator {
 
-    private val log: Logger = LoggerFactory.getLogger(VarselSink::class.java)
+    private val log = KotlinLogging.logger {}
+    private val secureLog = KotlinLogging.logger("secureLog")
 
     private val objectMapper = defaultDeserializer()
 
@@ -61,7 +63,15 @@ class VarselSink(
     private fun ZonedDateTime.toUtcLocalDateTime() = withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime()
     private fun List<String>.containsIgnoreCase(string: String) = map { it.lowercase() }.contains(string.lowercase())
 
-    private fun String.coalesced() = coalescingService.coalesce(this).finalTekst
+    private fun String.coalesced() = coalescingService.coalesce(this)
+        .also {
+            if (it.isCoalesced) {
+                val rules = it.rulesApplied.map { rule -> rule.name }.joinToString(", ")
+                log.info { "Lagrer varsel med modifisert tekst etter regler [$rules]" }
+                secureLog.info { "Lagrer varsel modifisert tekst { original: \"${it.originalTekst}\", final: \"${it.finalTekst}\" } etter regler [$rules]" }
+            }
+        }
+        .finalTekst
 
     override fun onError(problems: MessageProblems, context: MessageContext) {
         log.error(problems.toString())
