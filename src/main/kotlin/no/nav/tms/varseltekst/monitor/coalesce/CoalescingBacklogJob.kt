@@ -11,6 +11,7 @@ class CoalescingBacklogJob(
 ): PeriodicJob(100.milliseconds) {
 
     private val log = KotlinLogging.logger {}
+    private val secureLog = KotlinLogging.logger("secureLog")
 
     override val job = initializeJob {
         processCoalescingBacklog()
@@ -21,6 +22,7 @@ class CoalescingBacklogJob(
 
         if (nextEntry == null) {
             log.info { "Ferdig med prosessering av sammenslåings-backlog. Stopper periodisk jobb." }
+            secureLog.info { "Ferdig med prosessering av sammenslåings-backlog. Stopper periodisk jobb." }
             stop()
         } else {
             processBacklogEntry(nextEntry)
