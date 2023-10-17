@@ -10,7 +10,7 @@ class CoalescingBacklogJob(
     private val coalescingRepository: CoalescingRepository,
     private val backlogRepository: BacklogRepository,
     private val coalescingService: CoalescingService
-): PeriodicJob(100.milliseconds) {
+): PeriodicJob(10.milliseconds) {
 
     private val log = KotlinLogging.logger {}
     private val secureLog = KotlinLogging.logger("secureLog")
