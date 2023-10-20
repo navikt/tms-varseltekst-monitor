@@ -74,6 +74,6 @@ class VarselSink(
         .finalTekst
 
     override fun onError(problems: MessageProblems, context: MessageContext) {
-        log.error(problems.toString())
+        log.error { "$problems" }
     }
 }
