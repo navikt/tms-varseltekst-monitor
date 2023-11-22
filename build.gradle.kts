@@ -18,14 +18,18 @@ tasks.withType<KotlinCompile> {
 }
 
 repositories {
-    maven("https://jitpack.io")
     mavenCentral()
     maven("https://packages.confluent.io/maven")
+    maven("https://maven.pkg.github.com/navikt/*") {
+        credentials {
+            username = System.getenv("GITHUB_ACTOR")?: "x-access-token"
+            password = System.getenv("GITHUB_TOKEN")?: project.findProperty("githubPassword") as String
+        }
+    }
     mavenLocal()
 }
 
 dependencies {
-    implementation(DittNAVCommonLib.utils)
     implementation(Flyway.core)
     implementation(Hikari.cp)
     implementation(Ktor.Server.netty)
@@ -35,7 +39,8 @@ dependencies {
     implementation(Logstash.logbackEncoder)
     implementation(Postgresql.postgresql)
     implementation(RapidsAndRivers.rapidsAndRivers)
-    implementation(TmsCommonLib.commonLib)
+    implementation(TmsCommonLib.utils)
+    implementation(TmsCommonLib.metrics)
 
     testImplementation(Junit.api)
     testImplementation(Junit.engine)
@@ -48,7 +53,6 @@ dependencies {
 
 application {
     mainClass.set("no.nav.tms.varseltekst.monitor.config.ApplicationKt")
-
 }
 
 tasks {

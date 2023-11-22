@@ -1,6 +1,6 @@
 package no.nav.tms.varseltekst.monitor.config
 
-import no.nav.personbruker.dittnav.common.util.config.StringEnvVar.getEnvVar
+import no.nav.tms.common.util.config.StringEnvVar.getEnvVar
 
 data class Environment(val clusterName: String = getEnvVar("NAIS_CLUSTER_NAME"),
                        val namespace: String = getEnvVar("NAIS_NAMESPACE"),
