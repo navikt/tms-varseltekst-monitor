@@ -26,7 +26,6 @@ class VarselSink(
 
     override fun packetValidator(): River.() -> Unit = {
         validate { it.demandValue("@event_name", "aktivert") }
-        validate { it.demandValue("@source", "varsel-authority") }
         validate { it.requireKey(
                 "varselId",
                 "type",

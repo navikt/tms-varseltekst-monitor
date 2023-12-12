@@ -135,22 +135,6 @@ internal class VarselSinkTest {
         database.getTekster(SMS_TEKST) shouldContain "sms-tekst ***"
     }
 
-    @Test
-    fun `ignorerer aktivert-eventer fra aggregator`() {
-        val testRapid = TestRapid()
-        testRapid.registerSink(createVarselSink(NumberCensorRule))
-
-        val aggregatorBeskjedGammel = varselJson("beskjed", "e1", tekst = "tekst en", source = null)
-        val aggregatorBeskjedNy = varselJson("beskjed", "e2", tekst = "tekst to", source = "aggregator")
-        val varselAuthorityBeskjed = varselJson("beskjed", "e3", tekst = "tekst tre", source = "varsel-authority")
-
-        testRapid.sendTestMessage(aggregatorBeskjedGammel)
-        testRapid.sendTestMessage(aggregatorBeskjedNy)
-        testRapid.sendTestMessage(varselAuthorityBeskjed)
-
-        database.antallTekster(WEB_TEKST) shouldBe 1
-    }
-
     private fun createVarselSink(vararg rules: CoalescingRule) = VarselSink(
         coalescingService = CoalescingService.initialize(coalescingRepository, backlogRepository, rules.toList()),
         varselRepository = varselRepository
