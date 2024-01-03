@@ -7,15 +7,18 @@ fun varselJson(
     type: String,
     eventId: String,
     eksternVarsling: Boolean = true,
+    spraakkode: String = "nb",
     tekst: String = "tekst",
     prefererteKanaler: List<String> = listOf("SMS", "EPOST"),
     smsVarslingstekst: String? = null,
     epostVarslingstekst: String? = null,
     epostVarslingstittel: String? = null
-) = """{
-        "@event_name": "aktivert",
+) = """
+    {
+        "@event_name": "opprettet",
         "type": "$type",
         "produsent": {
+            "cluster": "cluster",
             "namespace": "namespace",
             "appnavn": "appnavn"
         },
@@ -23,11 +26,21 @@ fun varselJson(
         "opprettet": "${ZonedDateTime.now()}",
         "ident": "12345678910",
         "innhold": { 
-            "tekst": "$tekst",
-            "link": "http://link"
+            "link": "http://link",
+            "tekster": [
+                {
+                    "spraakkode": "$spraakkode",
+                    "tekst": "$tekst",
+                    "default": true
+                },
+                {
+                    "spraakkode": "en",
+                    "tekst": "Other text",
+                    "default": false
+                }
+            ]
         },
         "sensitivitet": "high",
-        "aktivFremTil": "${ZonedDateTime.now().plusDays(1)}",
         ${  if(eksternVarsling) {
                 """
                     "eksternVarslingBestilling": {
@@ -41,7 +54,7 @@ fun varselJson(
                 ""
             }
         }
-        "aktiv": true
+        "aktivFremTil": "${ZonedDateTime.now().plusDays(1)}"
     }""".trimIndent()
 
 private fun List<String>.toJsonArray(): String {

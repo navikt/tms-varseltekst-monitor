@@ -12,7 +12,7 @@ import java.time.ZonedDateTime
 class VarselRepository(private val database: Database) {
 
     fun persistVarsel(varsel: VarselOversikt) {
-        val varselDto = VarselDto(
+        VarselDto(
             eventId = varsel.eventId,
             eventType = varsel.eventType,
             producerNamespace = varsel.producerNamespace,
@@ -26,9 +26,7 @@ class VarselRepository(private val database: Database) {
             epostTekstRef = varsel.epostTekst?.let { persistEpostTekst(it) },
             varseltidspunkt = varsel.varseltidspunkt,
             tidspunkt = nowAtUtc()
-        )
-
-        insertVarsel(varselDto)
+        ).let { insertVarsel(it) }
     }
 
     private val createVarselQuery = """

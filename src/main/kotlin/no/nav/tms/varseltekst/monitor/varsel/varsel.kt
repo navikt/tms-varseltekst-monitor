@@ -1,7 +1,6 @@
 package no.nav.tms.varseltekst.monitor.varsel
 
 import java.time.LocalDateTime
-import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
 data class AktivertVarsel(
@@ -14,8 +13,20 @@ data class AktivertVarsel(
 )
 
 data class Innhold(
+    val link: String?,
+    val tekster: List<WebTekst>
+) {
+    fun defaultTekst() = when {
+        tekster.size == 1 -> tekster.first().tekst
+        tekster.size > 1 -> tekster.first { it.default }.tekst
+        else -> throw IllegalArgumentException("Må definere minst 1 tekst")
+    }
+}
+
+data class WebTekst(
     val tekst: String,
-    val link: String?
+    val spraakkode: String,
+    val default: Boolean
 )
 
 data class Produsent(
