@@ -15,7 +15,6 @@ data class Environment(val clusterName: String = getEnvVar("NAIS_CLUSTER_NAME"),
 
 private fun getKafkaEnv(): Map<String, String> {
     return System.getenv().keepKeys(
-        "RAPID_TOPIC",
         "KAFKA_BROKERS",
         "KAFKA_CONSUMER_GROUP_ID",
         "KAFKA_RAPID_TOPIC",
@@ -23,7 +22,7 @@ private fun getKafkaEnv(): Map<String, String> {
         "KAFKA_CREDSTORE_PASSWORD",
         "KAFKA_TRUSTSTORE_PATH",
         "KAFKA_RESET_POLICY"
-    )
+    ) + mapOf("HTTP_PORT" to "8080")
 }
 
 private fun Map<String, String>.keepKeys(vararg keys: String): Map<String, String> {

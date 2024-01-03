@@ -9,8 +9,6 @@ import no.nav.helse.rapids_rivers.River
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingService
 import no.nav.tms.varseltekst.monitor.config.PacketValidator
 import no.nav.tms.varseltekst.monitor.util.defaultDeserializer
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
@@ -25,7 +23,7 @@ class VarselSink(
     private val objectMapper = defaultDeserializer()
 
     override fun packetValidator(): River.() -> Unit = {
-        validate { it.demandValue("@event_name", "aktivert") }
+        validate { it.demandValue("@event_name", "opprettet") }
         validate { it.requireKey(
                 "varselId",
                 "type",
@@ -51,7 +49,7 @@ class VarselSink(
         eksternVarsling = varsel.eksternVarslingBestilling != null,
         preferertKanalSms = varsel.eksternVarslingBestilling?.prefererteKanaler?.containsIgnoreCase("sms") ?: false,
         preferertKanalEpost = varsel.eksternVarslingBestilling?.prefererteKanaler?.containsIgnoreCase("epost") ?: false,
-        webTekst = varsel.innhold.tekst.coalesced(),
+        webTekst = varsel.innhold.defaultTekst().coalesced(),
         smsTekst = varsel.eksternVarslingBestilling?.smsVarslingstekst?.coalesced(),
         epostTittel = varsel.eksternVarslingBestilling?.epostVarslingstittel?.coalesced(),
         epostTekst = varsel.eksternVarslingBestilling?.epostVarslingstekst?.coalesced(),
