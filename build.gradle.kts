@@ -24,6 +24,7 @@ repositories {
 
 dependencies {
     implementation(Flyway.core)
+    implementation(Flyway.postgres)
     implementation(Hikari.cp)
     implementation(Ktor.Server.netty)
     implementation(Ktor.Server.htmlDsl)
