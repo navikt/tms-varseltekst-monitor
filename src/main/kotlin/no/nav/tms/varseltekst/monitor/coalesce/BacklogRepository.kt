@@ -2,8 +2,8 @@ package no.nav.tms.varseltekst.monitor.coalesce
 
 import kotliquery.*
 import no.nav.tms.varseltekst.monitor.coalesce.rules.*
-import no.nav.tms.varseltekst.monitor.database.Database
-import no.nav.tms.varseltekst.monitor.database.updateInTx
+import no.nav.tms.varseltekst.monitor.setup.Database
+import no.nav.tms.varseltekst.monitor.util.updateInTx
 import no.nav.tms.varseltekst.monitor.util.LocalDateTimeHelper.nowAtUtc
 
 

@@ -3,7 +3,7 @@ package no.nav.tms.varseltekst.monitor.varsel
 import kotliquery.Row
 import kotliquery.queryOf
 import no.nav.tms.varseltekst.monitor.coalesce.TekstTable
-import no.nav.tms.varseltekst.monitor.database.Database
+import no.nav.tms.varseltekst.monitor.setup.Database
 import no.nav.tms.varseltekst.monitor.util.LocalDateTimeHelper.nowAtUtc
 
 fun Database.insertTekst(table: TekstTable, tekst: String) = update {

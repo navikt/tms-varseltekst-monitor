@@ -1,4 +1,4 @@
-package no.nav.tms.varseltekst.monitor.config
+package no.nav.tms.varseltekst.monitor.setup
 
 import no.nav.tms.common.util.config.StringEnvVar.getEnvVar
 

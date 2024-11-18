@@ -3,12 +3,10 @@ package no.nav.tms.varseltekst.monitor.coalesce
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.runBlocking
-import kotliquery.TransactionalSession
 import kotliquery.queryOf
 import no.nav.tms.varseltekst.monitor.coalesce.rules.*
-import no.nav.tms.varseltekst.monitor.config.*
-import no.nav.tms.varseltekst.monitor.database.Database
-import no.nav.tms.varseltekst.monitor.database.updateInTx
+import no.nav.tms.varseltekst.monitor.setup.*
+import no.nav.tms.varseltekst.monitor.setup.Database
 import no.nav.tms.varseltekst.monitor.varsel.TestVarsel
 import no.nav.tms.varseltekst.monitor.varsel.VarselOversikt
 import no.nav.tms.varseltekst.monitor.varsel.VarselRepository
@@ -16,7 +14,6 @@ import no.nav.tms.varseltekst.monitor.varsel.selectVarsel
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
-import java.sql.Connection
 
 internal class CoalescingBacklogJobTest {
 
@@ -34,7 +31,7 @@ internal class CoalescingBacklogJobTest {
         numberCensorRule = createInDb(NumberCensorRule)
         greetingCensorRule = createInDb(GreetingCensorRule)
 
-        coalescingService = CoalescingService(listOf(numberCensorRule, greetingCensorRule))
+        coalescingService = CoalescingService.initialized(listOf(numberCensorRule, greetingCensorRule))
     }
 
     @AfterEach

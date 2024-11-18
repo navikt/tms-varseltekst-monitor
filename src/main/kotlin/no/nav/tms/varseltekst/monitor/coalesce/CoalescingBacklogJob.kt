@@ -1,16 +1,15 @@
 package no.nav.tms.varseltekst.monitor.coalesce
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import no.nav.tms.varseltekst.monitor.util.PeriodicJob
-import kotlin.concurrent.timer
-import kotlin.time.Duration.Companion.milliseconds
+import no.nav.tms.common.util.scheduling.PeriodicJob
+import java.time.Duration
 import kotlin.time.measureTime
 
 class CoalescingBacklogJob(
     private val coalescingRepository: CoalescingRepository,
     private val backlogRepository: BacklogRepository,
     private val coalescingService: CoalescingService
-): PeriodicJob(10.milliseconds) {
+): PeriodicJob(Duration.ofMillis(10)) {
 
     private val log = KotlinLogging.logger {}
     private val secureLog = KotlinLogging.logger("secureLog")

@@ -1,4 +1,4 @@
-package no.nav.tms.varseltekst.monitor.config
+package no.nav.tms.varseltekst.monitor.setup
 
 import com.zaxxer.hikari.HikariDataSource
 import org.flywaydb.core.Flyway

@@ -1,9 +1,7 @@
-package no.nav.tms.varseltekst.monitor.config
+package no.nav.tms.varseltekst.monitor.setup
 
 import kotliquery.queryOf
 import no.nav.tms.varseltekst.monitor.coalesce.TekstTable
-import no.nav.tms.varseltekst.monitor.database.Database
-import java.sql.Connection
 
 fun Database.deleteVarsel() = deleteFrom("varsel")
 

@@ -31,8 +31,10 @@ dependencies {
     implementation(KotlinLogging.logging)
     implementation(KotliQuery.kotliquery)
     implementation(Logstash.logbackEncoder)
+    implementation(JacksonDatatype.datatypeJsr310)
+    implementation(JacksonDatatype.moduleKotlin)
     implementation(Postgresql.postgresql)
-    implementation(RapidsAndRivers.rapidsAndRivers)
+    implementation(TmsKafkaTools.kafkaApplication)
     implementation(TmsCommonLib.utils)
     implementation(TmsCommonLib.metrics)
 
@@ -47,6 +49,12 @@ dependencies {
 
 application {
     mainClass.set("no.nav.tms.varseltekst.monitor.config.ApplicationKt")
+}
+
+tasks {
+    shadowJar {
+        mergeServiceFiles()
+    }
 }
 
 tasks {

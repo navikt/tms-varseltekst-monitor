@@ -1,15 +1,10 @@
-package no.nav.tms.varseltekst.monitor.config
+package no.nav.tms.varseltekst.monitor.setup
 
 import com.zaxxer.hikari.HikariDataSource
-import kotlinx.coroutines.runBlocking
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotliquery.queryOf
-import no.nav.tms.varseltekst.monitor.database.Database
 import org.flywaydb.core.Flyway
-import org.slf4j.Logger
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
-import org.testcontainers.containers.wait.strategy.WaitAllStrategy
 
 class LocalPostgresDatabase private constructor() : Database {
 

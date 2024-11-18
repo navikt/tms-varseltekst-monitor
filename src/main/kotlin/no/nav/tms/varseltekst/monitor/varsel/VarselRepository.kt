@@ -3,11 +3,10 @@ package no.nav.tms.varseltekst.monitor.varsel
 import kotliquery.TransactionalSession
 import kotliquery.queryOf
 import no.nav.tms.varseltekst.monitor.coalesce.TekstTable
-import no.nav.tms.varseltekst.monitor.database.Database
-import no.nav.tms.varseltekst.monitor.database.singleInTx
-import no.nav.tms.varseltekst.monitor.database.singleOrNullInTx
+import no.nav.tms.varseltekst.monitor.setup.Database
+import no.nav.tms.varseltekst.monitor.util.singleInTx
+import no.nav.tms.varseltekst.monitor.util.singleOrNullInTx
 import no.nav.tms.varseltekst.monitor.util.LocalDateTimeHelper.nowAtUtc
-import java.time.ZonedDateTime
 
 class VarselRepository(private val database: Database) {
 

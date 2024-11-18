@@ -2,7 +2,7 @@ package no.nav.tms.varseltekst.monitor.coalesce.rules
 
 import kotliquery.queryOf
 import no.nav.tms.varseltekst.monitor.coalesce.TekstTable
-import no.nav.tms.varseltekst.monitor.database.Database
+import no.nav.tms.varseltekst.monitor.setup.Database
 import no.nav.tms.varseltekst.monitor.util.LocalDateTimeHelper
 
 fun Database.countBackLog(tekstTable: TekstTable) = single {
