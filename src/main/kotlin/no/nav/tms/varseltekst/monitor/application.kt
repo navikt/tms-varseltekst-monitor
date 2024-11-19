@@ -39,6 +39,11 @@ fun main() {
     )
 
     KafkaApplication.build {
+        kafkaConfig {
+            readTopics(environment.varselTopic)
+            groupId = environment.groupId
+        }
+
         subscribers(
             VarselOpprettetSubscriber(coalescingService, VarselRepository(database))
         )

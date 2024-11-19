@@ -6,8 +6,6 @@ metadata:
   labels:
     team: min-side
 spec:
-  envFrom:
-    - secret: tms-varseltekst-monitor-secrets
   image: {{version}}
   port: 8080
   liveness:
@@ -48,3 +46,10 @@ spec:
         cascadingDelete: false
   kafka:
     pool: nav-prod
+  env:
+    - name: KAFKA_GROUP_ID
+      value: "varseltekst-monitor-06"
+    - name: KAFKA_RESET_POLICY
+      value: "earliest"
+    - name: VARSEL_TOPIC
+      value: "min-side.brukervarsel-v1"
