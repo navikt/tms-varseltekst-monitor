@@ -48,7 +48,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("no.nav.tms.varseltekst.monitor.config.ApplicationKt")
+    mainClass.set("no.nav.tms.varseltekst.monitor.ApplicationKt")
 }
 
 tasks {
