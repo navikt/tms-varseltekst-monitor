@@ -56,13 +56,5 @@ fun main() {
         onReady {
             coalescingBacklogJob.start()
         }
-
-        healthCheck("BacklogJob") {
-            if (coalescingBacklogJob.job.isActive) {
-                AppHealth.Healthy
-            } else {
-                AppHealth.Unhealthy
-            }
-        }
     }.start()
 }
