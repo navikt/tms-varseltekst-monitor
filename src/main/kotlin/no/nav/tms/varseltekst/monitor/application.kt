@@ -1,6 +1,5 @@
 package no.nav.tms.varseltekst.monitor
 
-import no.nav.tms.kafka.application.AppHealth
 import no.nav.tms.kafka.application.KafkaApplication
 import no.nav.tms.varseltekst.monitor.coalesce.BacklogRepository
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingBacklogJob
@@ -23,7 +22,8 @@ fun main() {
         DokumentTittelRule,
         InntektsmeldingRule,
         UtvidetSykepengerRule,
-        FullmaktNavnRule
+        FullmaktNavnRule,
+        KontonummerEndretTidspunktRule
     )
 
     val coalescingService = CoalescingService.uninitialized(
