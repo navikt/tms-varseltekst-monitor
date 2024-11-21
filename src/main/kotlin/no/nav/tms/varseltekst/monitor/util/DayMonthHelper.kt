@@ -1,4 +1,4 @@
-package no.nav.tms.varseltekst.monitor.locale
+package no.nav.tms.varseltekst.monitor.util
 
 import java.util.*
 

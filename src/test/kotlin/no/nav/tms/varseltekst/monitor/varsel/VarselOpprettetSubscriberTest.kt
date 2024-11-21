@@ -3,26 +3,24 @@ package no.nav.tms.varseltekst.monitor.varsel
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
-import no.nav.helse.rapids_rivers.testsupport.TestRapid
+import no.nav.tms.kafka.application.MessageBroadcaster
 import no.nav.tms.varseltekst.monitor.coalesce.BacklogRepository
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingRepository
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingService
 import no.nav.tms.varseltekst.monitor.coalesce.TekstTable.*
 import no.nav.tms.varseltekst.monitor.coalesce.rules.CoalescingRule
 import no.nav.tms.varseltekst.monitor.coalesce.rules.NumberCensorRule
-import no.nav.tms.varseltekst.monitor.config.LocalPostgresDatabase
-import no.nav.tms.varseltekst.monitor.config.clearAllTables
-import no.nav.tms.varseltekst.monitor.config.registerSink
+import no.nav.tms.varseltekst.monitor.setup.LocalPostgresDatabase
+import no.nav.tms.varseltekst.monitor.setup.clearAllTables
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 
-internal class VarselSinkTest {
+internal class VarselOpprettetSubscriberTest {
     private val database = LocalPostgresDatabase.migratedDb()
 
     private val varselRepository = VarselRepository(database)
     private val coalescingRepository = CoalescingRepository(database)
     private val backlogRepository = BacklogRepository(database)
-
 
     @AfterEach
     fun reset() {
@@ -31,8 +29,7 @@ internal class VarselSinkTest {
 
     @Test
     fun `leser varsel fra rapid`() {
-        val testRapid = TestRapid()
-        testRapid.registerSink(createVarselSink())
+        val broadcaster = setupBroadcaster()
 
         val varsel = varselJson(
             type = "beskjed",
@@ -45,7 +42,7 @@ internal class VarselSinkTest {
             epostVarslingstekst = "epostTekst"
         )
 
-        testRapid.sendTestMessage(varsel)
+        broadcaster.broadcastJson(varsel)
 
         val result = database.selectVarsel("123")
 
@@ -62,8 +59,7 @@ internal class VarselSinkTest {
 
     @Test
     fun `lagrer unike varseltekster`() {
-        val testRapid = TestRapid()
-        testRapid.registerSink(createVarselSink())
+        val broadcaster = setupBroadcaster()
 
         val varsel1 = varselJson(
             type = "beskjed",
@@ -85,8 +81,8 @@ internal class VarselSinkTest {
             epostVarslingstekst = "epostTekst"
         )
 
-        testRapid.sendTestMessage(varsel1)
-        testRapid.sendTestMessage(varsel2)
+        broadcaster.broadcastJson(varsel1)
+        broadcaster.broadcastJson(varsel2)
 
         database.antallTekster(WEB_TEKST) shouldBe 2
         database.antallTekster(SMS_TEKST) shouldBe 1
@@ -101,8 +97,7 @@ internal class VarselSinkTest {
 
     @Test
     fun `bruker CoalescingRule til å slå sammen visse tekster`() {
-        val testRapid = TestRapid()
-        testRapid.registerSink(createVarselSink(NumberCensorRule))
+        val broadcaster = setupBroadcaster(NumberCensorRule)
 
         val varsel1 = varselJson(
             type = "beskjed",
@@ -125,9 +120,9 @@ internal class VarselSinkTest {
             smsVarslingstekst = "sms-tekst 3"
         )
 
-        testRapid.sendTestMessage(varsel1)
-        testRapid.sendTestMessage(varsel2)
-        testRapid.sendTestMessage(varsel3)
+        broadcaster.broadcastJson(varsel1)
+        broadcaster.broadcastJson(varsel2)
+        broadcaster.broadcastJson(varsel3)
 
         database.antallTekster(WEB_TEKST) shouldBe 3
         database.antallTekster(SMS_TEKST) shouldBe 1
@@ -135,8 +130,10 @@ internal class VarselSinkTest {
         database.getTekster(SMS_TEKST) shouldContain "sms-tekst ***"
     }
 
-    private fun createVarselSink(vararg rules: CoalescingRule) = VarselSink(
-        coalescingService = CoalescingService.initialize(coalescingRepository, backlogRepository, rules.toList()),
+    private fun setupBroadcaster(vararg rules: CoalescingRule) = VarselOpprettetSubscriber(
+        coalescingService = CoalescingService.uninitialized(coalescingRepository, backlogRepository, rules.toList()).initialize(),
         varselRepository = varselRepository
-    )
+    ).let {
+        MessageBroadcaster(it)
+    }
 }

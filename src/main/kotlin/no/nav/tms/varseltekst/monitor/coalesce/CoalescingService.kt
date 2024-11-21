@@ -3,7 +3,18 @@ package no.nav.tms.varseltekst.monitor.coalesce
 import no.nav.tms.varseltekst.monitor.coalesce.rules.CoalescingRule
 import no.nav.tms.varseltekst.monitor.coalesce.rules.CoalescingRuleWrapper
 
-class CoalescingService(private val coalescingRules: List<CoalescingRuleWrapper>) {
+class CoalescingService private constructor() {
+
+    private lateinit var coalescingRules: List<CoalescingRuleWrapper>
+    private var initializer: Initializer? = null
+
+    fun initialize(): CoalescingService {
+        coalescingRules = initializer
+            ?.initializeRules()
+            ?: throw IllegalStateException("Cannot initialize CoalescingService without an initializer")
+
+        return this
+    }
 
     fun coalesce(tekst: String): CoalescingResult {
 
@@ -21,6 +32,7 @@ class CoalescingService(private val coalescingRules: List<CoalescingRuleWrapper>
     }
 
     fun coalesce(tekst: String, ruleId: Int): CoalescingResult {
+
         val ruleDefinition = coalescingRules.find { it.ruleId == ruleId }
             ?.definition
             ?: throw IllegalStateException("Did not find rule with id $ruleId")
@@ -35,19 +47,34 @@ class CoalescingService(private val coalescingRules: List<CoalescingRuleWrapper>
     }
 
     companion object {
-        fun initialize(
+        fun uninitialized(
             coalescingRepository: CoalescingRepository,
             backlogRepository: BacklogRepository,
             rules: List<CoalescingRule>
-        ): CoalescingService {
+        ) = CoalescingService().also {
+            it.initializer = Initializer(
+                coalescingRepository, backlogRepository, rules
+            )
+        }
 
+        fun initialized(rules: List<CoalescingRuleWrapper>) = CoalescingService().also {
+            it.coalescingRules = rules
+        }
+    }
+
+    private class Initializer(
+        private val coalescingRepository: CoalescingRepository,
+        private val backlogRepository: BacklogRepository,
+        private val rules: List<CoalescingRule>
+    ) {
+        fun initializeRules(): List<CoalescingRuleWrapper> {
             val newRules = findNewRules(coalescingRepository, rules)
 
             if (newRules.isNotEmpty()) {
                 backlogRepository.persistRulesAndBacklog(newRules)
             }
 
-            return CoalescingService(wrapDefinitionsWithDtos(coalescingRepository, rules))
+            return wrapDefinitionsWithDtos(coalescingRepository, rules)
         }
 
         private fun findNewRules(repository: CoalescingRepository, rules: List<CoalescingRule>): List<CoalescingRule> {
@@ -70,4 +97,5 @@ class CoalescingService(private val coalescingRules: List<CoalescingRuleWrapper>
             }
         }
     }
+
 }

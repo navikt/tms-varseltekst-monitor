@@ -3,7 +3,7 @@ package no.nav.tms.varseltekst.monitor.coalesce
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import no.nav.tms.varseltekst.monitor.coalesce.rules.*
-import no.nav.tms.varseltekst.monitor.config.*
+import no.nav.tms.varseltekst.monitor.setup.*
 import no.nav.tms.varseltekst.monitor.varsel.insertTekst
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -32,7 +32,7 @@ internal class CoalescingServiceInitializationTest {
             GreetingCensorRule
         )
 
-        CoalescingService.initialize(coalescingRepository, backlogRepository, rules)
+        CoalescingService.uninitialized(coalescingRepository, backlogRepository, rules).initialize()
 
         val ruleDtos = coalescingRepository.getCoalescingRules()
 
@@ -67,7 +67,7 @@ internal class CoalescingServiceInitializationTest {
 
         insertTexts(table, texts)
 
-        CoalescingService.initialize(coalescingRepository, backlogRepository, rules)
+        CoalescingService.uninitialized(coalescingRepository, backlogRepository, rules).initialize()
 
         val numberInBacklog = database.countBackLog(table)
 

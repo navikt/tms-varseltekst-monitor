@@ -14,7 +14,7 @@ internal class CoalescingServiceTest {
         2 to GreetingCensorRule
     )
 
-    private val service = CoalescingService(ruleWrappers)
+    private val service = CoalescingService.initialized(ruleWrappers)
 
     @ParameterizedTest
     @CsvSource(

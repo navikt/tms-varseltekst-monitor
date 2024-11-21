@@ -1,6 +1,6 @@
 package no.nav.tms.varseltekst.monitor.coalesce.rules
 
-import no.nav.tms.varseltekst.monitor.locale.DayMonthHelper
+import no.nav.tms.varseltekst.monitor.util.DayMonthHelper
 import java.util.*
 
 object DayOfWeekDateTimeRule: CoalescingRule {

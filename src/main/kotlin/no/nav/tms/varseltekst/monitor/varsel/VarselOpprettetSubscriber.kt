@@ -1,42 +1,38 @@
 package no.nav.tms.varseltekst.monitor.varsel
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.fasterxml.jackson.module.kotlin.treeToValue
 import io.github.oshai.kotlinlogging.KotlinLogging
-import no.nav.helse.rapids_rivers.JsonMessage
-import no.nav.helse.rapids_rivers.MessageContext
-import no.nav.helse.rapids_rivers.MessageProblems
-import no.nav.helse.rapids_rivers.River
+import no.nav.tms.kafka.application.JsonMessage
+import no.nav.tms.kafka.application.Subscriber
+import no.nav.tms.kafka.application.Subscription
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingService
-import no.nav.tms.varseltekst.monitor.config.PacketValidator
 import no.nav.tms.varseltekst.monitor.util.defaultDeserializer
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
-class VarselSink(
+class VarselOpprettetSubscriber(
     private val coalescingService: CoalescingService,
     private val varselRepository: VarselRepository,
-) : River.PacketListener, PacketValidator {
+) : Subscriber() {
 
     private val log = KotlinLogging.logger {}
     private val secureLog = KotlinLogging.logger("secureLog")
 
     private val objectMapper = defaultDeserializer()
 
-    override fun packetValidator(): River.() -> Unit = {
-        validate { it.demandValue("@event_name", "opprettet") }
-        validate { it.requireKey(
-                "varselId",
-                "type",
-                "produsent",
-                "innhold",
-                "opprettet"
-            )
-        }
-        validate { it.interestedIn( "eksternVarslingBestilling")}
-    }
+    override fun subscribe() = Subscription.forEvent("opprettet")
+        .withFields(
+            "varselId",
+            "type",
+            "produsent",
+            "innhold",
+            "opprettet"
+        )
+        .withOptionalFields("eksternVarslingBestilling")
 
-    override fun onPacket(packet: JsonMessage, context: MessageContext) {
-        val aktivertVarsel: AktivertVarsel = objectMapper.readValue(packet.toJson())
+    override suspend fun receive(jsonMessage: JsonMessage) {
+        val aktivertVarsel: AktivertVarsel = objectMapper.treeToValue(jsonMessage.json)
 
         varselRepository.persistVarsel(coalesceAndBuildOversikt(aktivertVarsel))
     }
@@ -47,7 +43,7 @@ class VarselSink(
         producerNamespace = varsel.produsent.namespace,
         producerAppnavn = varsel.produsent.appnavn,
         eksternVarsling = varsel.eksternVarslingBestilling != null,
-        preferertKanalSms = varsel.eksternVarslingBestilling?.prefererteKanaler?.containsIgnoreCase("sms") ?: false,
+        preferertKanalSms = varsel.eksternVarslingBestilling?.prefererteKanaler?.containsIgnoreCase("sms", "betinget_sms") ?: false,
         preferertKanalEpost = varsel.eksternVarslingBestilling?.prefererteKanaler?.containsIgnoreCase("epost") ?: false,
         webTekst = varsel.innhold.defaultTekst().coalesced(),
         smsTekst = varsel.eksternVarslingBestilling?.smsVarslingstekst?.coalesced(),
@@ -58,7 +54,7 @@ class VarselSink(
 
 
     private fun ZonedDateTime.toUtcLocalDateTime() = withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime()
-    private fun List<String>.containsIgnoreCase(string: String) = map { it.lowercase() }.contains(string.lowercase())
+    private fun List<String>.containsIgnoreCase(vararg strings: String) = map { it.lowercase() }.any { strings.map { it.lowercase() }.contains(it) }
 
     private fun String.coalesced() = coalescingService.coalesce(this)
         .also {
@@ -69,8 +65,4 @@ class VarselSink(
             }
         }
         .finalTekst
-
-    override fun onError(problems: MessageProblems, context: MessageContext) {
-        log.error { "$problems" }
-    }
 }

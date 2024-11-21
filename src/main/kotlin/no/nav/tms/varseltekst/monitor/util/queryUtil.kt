@@ -1,4 +1,4 @@
-package no.nav.tms.varseltekst.monitor.database
+package no.nav.tms.varseltekst.monitor.util
 
 import kotliquery.Query
 import kotliquery.TransactionalSession

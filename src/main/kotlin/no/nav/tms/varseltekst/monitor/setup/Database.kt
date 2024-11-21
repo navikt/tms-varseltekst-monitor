@@ -1,10 +1,12 @@
-package no.nav.tms.varseltekst.monitor.database
+package no.nav.tms.varseltekst.monitor.setup
 
 import com.zaxxer.hikari.HikariDataSource
-import kotliquery.*
+import kotliquery.Query
+import kotliquery.TransactionalSession
 import kotliquery.action.ListResultQueryAction
 import kotliquery.action.NullableResultQueryAction
-
+import kotliquery.sessionOf
+import kotliquery.using
 
 interface Database {
 

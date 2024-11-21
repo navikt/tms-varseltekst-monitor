@@ -1,8 +1,7 @@
-package no.nav.tms.varseltekst.monitor.config
+package no.nav.tms.varseltekst.monitor.setup
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import no.nav.tms.varseltekst.monitor.database.Database
 
 class PostgresDatabase(env: Environment) : Database {
 
