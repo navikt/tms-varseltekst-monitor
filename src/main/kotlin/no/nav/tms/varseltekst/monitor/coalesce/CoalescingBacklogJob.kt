@@ -8,7 +8,8 @@ import kotlin.time.measureTime
 class CoalescingBacklogJob(
     private val coalescingRepository: CoalescingRepository,
     private val backlogRepository: BacklogRepository,
-    private val coalescingService: CoalescingService
+    private val coalescingService: CoalescingService,
+    private val batchSize: Int = 500
 ): PeriodicJob(Duration.ofMillis(10)) {
 
     private val log = KotlinLogging.logger {}
@@ -19,13 +20,13 @@ class CoalescingBacklogJob(
     }
 
     private suspend fun processCoalescingBacklog() {
-        val nextEntry = backlogRepository.getNextBacklogEntry()
+        val nextEntries = backlogRepository.getNextBacklogEntries(batchSize)
 
-        if (nextEntry == null) {
+        if (nextEntries.isEmpty()) {
             log.info { "Ferdig med prosessering av sammenslåings-backlog. Stopper periodisk jobb." }
             stop()
         } else {
-            processBacklogEntry(nextEntry)
+            nextEntries.forEach(::processBacklogEntry)
         }
     }
 

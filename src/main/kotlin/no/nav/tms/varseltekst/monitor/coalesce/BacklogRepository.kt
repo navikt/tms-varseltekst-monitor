@@ -14,17 +14,18 @@ class BacklogRepository(private val database: Database) {
         fillBacklog(rules)
     }
 
-    fun getNextBacklogEntry() = database.singleOrNull {
+    fun getNextBacklogEntries(batchSize: Int) = database.list {
         queryOf(
             """
                 SELECT cb.* FROM coalescing_backlog as cb
                     join coalescing_rule as cr on cb.rule_id = cr.id 
                 ORDER BY cr.created_at, cr.id
-                LIMIT 1
-            """
+                LIMIT :batch
+            """,
+            mapOf("batch" to batchSize)
         )
             .map(toBacklogEntry())
-            .asSingle
+            .asList
     }
 
     private fun TransactionalSession.insertCoalescingRules(rules: List<CoalescingRule>) {
