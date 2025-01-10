@@ -17,7 +17,7 @@ object DayOfWeekDateTimeRule: CoalescingRule {
     override fun applyRule(text: String) = text.replace(norskBokmaalRegex, replacement)
 
     private fun buildDateRegex(): Regex {
-        val localeNB = Locale("nb", "NO")
+        val localeNB = Locale.of("nb", "NO")
 
         val dayRegexPart = DayMonthHelper.daysOfWeek(localeNB).joinToString("|")
         val monthRegexPart = DayMonthHelper.monthsOfYear(localeNB).joinToString("|")
