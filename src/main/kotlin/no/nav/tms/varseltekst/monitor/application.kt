@@ -18,12 +18,15 @@ fun main() {
     val backlogRepository = BacklogRepository(database)
 
     val coalesingRules = listOf(
+        ArbeidsmarkedtiltakRule,
         DayOfWeekDateTimeRule,
+        DokumentTittelGjelderRule,
         DokumentTittelRule,
-        InntektsmeldingRule,
-        UtvidetSykepengerRule,
         FullmaktNavnRule,
-        KontonummerEndretTidspunktRule
+        InntektsmeldingRule,
+        KontonummerEndretTidspunktRule,
+        SykefravaerOrgRule,
+        UtvidetSykepengerRule
     )
 
     val coalescingService = CoalescingService.uninitialized(
