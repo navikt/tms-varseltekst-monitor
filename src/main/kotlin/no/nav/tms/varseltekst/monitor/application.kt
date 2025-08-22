@@ -9,6 +9,8 @@ import no.nav.tms.varseltekst.monitor.coalesce.rules.*
 import no.nav.tms.varseltekst.monitor.setup.*
 import no.nav.tms.varseltekst.monitor.varsel.VarselOpprettetSubscriber
 import no.nav.tms.varseltekst.monitor.varsel.VarselRepository
+import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstRepository
+import no.nav.tms.varseltekst.monitor.varseltekst.varseltekstApi
 
 fun main() {
     val environment = Environment()
@@ -42,6 +44,12 @@ fun main() {
     )
 
     KafkaApplication.build {
+        ktorModule {
+            varseltekstApi(
+                varseltekstRepository = VarseltekstRepository(database)
+            )
+        }
+
         kafkaConfig {
             readTopics(environment.varselTopic)
             groupId = environment.groupId
