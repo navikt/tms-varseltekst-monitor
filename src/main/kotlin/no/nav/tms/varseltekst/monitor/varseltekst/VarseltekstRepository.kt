@@ -16,12 +16,12 @@ class VarseltekstRepository(private val database: Database) {
             :id_column is null
     """
 
-    fun finnForenkletSammendrag(teksttype: TekstType, maksAlderDager: Long?, varseltype: String?): List<VarselTekster.TotaltAntall> {
+    fun finnForenkletSammendrag(teksttype: Teksttype, maksAlderDager: Long?, varseltype: String?): List<VarselTekster.TotaltAntall> {
         return database.list {
             queryOf("""
                 select
                     count(*) as antall,
-                    vt.tekst
+                    tt.tekst
                 from
                     varsel join ${teksttype.columnTableName} tt on ${teksttype.columnTableName} = tt.id
                 where
@@ -44,9 +44,17 @@ class VarseltekstRepository(private val database: Database) {
     }
 }
 
-enum class TekstType(val columnTableName: String) {
+enum class Teksttype(val columnTableName: String) {
     WebTekst("web_tekst"),
     SmsTekst("sms_tekst"),
     EpostTittel("epost_tittel"),
-    EpostTekst("epost_tekst")
+    EpostTekst("epost_tekst");
+
+    companion object {
+        fun parse(string: String): Teksttype {
+            return entries
+                .firstOrNull { it.name.lowercase() == string.lowercase() }
+                ?: throw IllegalArgumentException("Fant ikke teksttype for verdi $string")
+        }
+    }
 }
