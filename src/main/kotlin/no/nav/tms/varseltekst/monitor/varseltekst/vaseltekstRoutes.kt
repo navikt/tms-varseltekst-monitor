@@ -17,7 +17,7 @@ fun Route.varseltekstRoutes(varseltekstRepository: VarseltekstRepository) {
 }
 
 private fun RoutingCall.teksttype() = request.pathVariables["teksttype"]
-    ?.let { TekstType.valueOf(it) }
+    ?.let { Teksttype.parse(it) }
     ?: throw IllegalArgumentException("Ugyldig teksttype")
 
 
