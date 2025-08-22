@@ -7,8 +7,9 @@ object VarselTekster {
     )
 
     data class DetaljertAntall(
-        val type: String,
-        val produsent: String,
+        val varseltype: String,
+        val produsentNamespace: String,
+        val produsentAppnavn: String,
         val antall: Int,
         val tekst: String
     )

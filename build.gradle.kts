@@ -23,6 +23,8 @@ repositories {
 }
 
 dependencies {
+    implementation(Apache.poi)
+    implementation(Apache.ooxml)
     implementation(Flyway.core)
     implementation(Flyway.postgres)
     implementation(Hikari.cp)
@@ -48,6 +50,7 @@ dependencies {
     testImplementation(TestContainers.postgresql)
     testImplementation(Kotest.runnerJunit5)
     testImplementation(Kotest.assertionsCore)
+    testImplementation(Ktor.Test.serverTestHost)
 }
 
 application {
