@@ -25,7 +25,7 @@ class VarseltekstRepository(private val database: Database) {
                 from
                     varsel join ${teksttype.columnTableName} tt on ${teksttype.columnTableName} = tt.id
                 where
-                    (:dager is null or varsel.tidspunkt > :dato) and
+                    (:dato is null or varsel.tidspunkt > :dato) and
                     (:varseltype is null or varsel.event_type = :varseltype)
                 group by tt.tekst
                 order by antall desc
