@@ -48,6 +48,7 @@ dependencies {
     testImplementation(TestContainers.postgresql)
     testImplementation(Kotest.runnerJunit5)
     testImplementation(Kotest.assertionsCore)
+    testImplementation(Ktor.Test.serverTestHost)
 }
 
 application {

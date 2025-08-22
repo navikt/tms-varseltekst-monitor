@@ -16,7 +16,29 @@ class VarseltekstRepository(private val database: Database) {
             :id_column is null
     """
 
-    fun finnForenkletSammendrag(teksttype: Teksttype, maksAlderDager: Long?, varseltype: String?): List<VarselTekster.TotaltAntall> {
+    fun tellAntallVarseltekster(
+        teksttype: Teksttype,
+        maksAlderDager: Long?,
+        varseltype: String?,
+        inkluderStandardtekster: Boolean
+    ): List<VarselTekster.TotaltAntall> {
+
+        val egendefinerteTekster = tellEgendefinerteTekster(teksttype, maksAlderDager, varseltype)
+
+        return if (inkluderStandardtekster && teksttype != Teksttype.WebTekst) {
+            egendefinerteTekster + tellStandandardtekster(teksttype, maksAlderDager, varseltype)
+        } else {
+            egendefinerteTekster
+        }.sortedByDescending {
+            it.antall
+        }
+    }
+
+    private fun tellEgendefinerteTekster(
+        teksttype: Teksttype,
+        maksAlderDager: Long?,
+        varseltype: String?,
+    ): List<VarselTekster.TotaltAntall> {
         return database.list {
             queryOf("""
                 select
@@ -33,7 +55,8 @@ class VarseltekstRepository(private val database: Database) {
                 mapOf(
                     "dato" to maksAlderDager?.let { LocalDate.now().minusDays(it) },
                     "varseltype" to varseltype
-                ))
+                )
+            )
                 .map {
                     VarselTekster.TotaltAntall(
                         antall = it.int("antall"),
@@ -42,13 +65,45 @@ class VarseltekstRepository(private val database: Database) {
                 }.asList
         }
     }
+
+    private fun tellStandandardtekster(
+        teksttype: Teksttype,
+        maksAlderDager: Long?,
+        varseltype: String?,
+    ): VarselTekster.TotaltAntall {
+
+        return database.single {
+            queryOf("""
+                select
+                    count(*) as antall
+                from
+                    varsel
+                where
+                    ${teksttype.preferenceColumn} and ${teksttype.columnTableName} is null and
+                    ((:dato)::timestamp is null or varsel.varseltidspunkt > :dato) and
+                    ((:varseltype)::text is null or varsel.event_type = :varseltype)
+                order by antall desc
+            """,
+                mapOf(
+                    "dato" to maksAlderDager?.let { LocalDate.now().minusDays(it) },
+                    "varseltype" to varseltype
+                )
+            )
+                .map {
+                    VarselTekster.TotaltAntall(
+                        antall = it.int("antall"),
+                        tekst = "<standardtekst>"
+                    )
+                }.asSingle
+        }
+    }
 }
 
-enum class Teksttype(val columnTableName: String) {
-    WebTekst("web_tekst"),
-    SmsTekst("sms_tekst"),
-    EpostTittel("epost_tittel"),
-    EpostTekst("epost_tekst");
+enum class Teksttype(val columnTableName: String, val preferenceColumn: String) {
+    WebTekst("web_tekst", "N/A"),
+    SmsTekst("sms_tekst", "sms_preferert"),
+    EpostTittel("epost_tittel", "epost_preferert"),
+    EpostTekst("epost_tekst", "epost_preferert");
 
     companion object {
         fun parse(string: String): Teksttype {
