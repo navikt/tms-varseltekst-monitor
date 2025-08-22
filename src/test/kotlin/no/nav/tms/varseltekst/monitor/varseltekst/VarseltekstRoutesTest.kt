@@ -1,6 +1,15 @@
 package no.nav.tms.varseltekst.monitor.varseltekst
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.kotest.matchers.collections.shouldBeSortedDescendingBy
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.server.testing.*
+import io.ktor.utils.io.*
 import no.nav.tms.varseltekst.monitor.setup.LocalPostgresDatabase
 import no.nav.tms.varseltekst.monitor.setup.clearAllTables
 import no.nav.tms.varseltekst.monitor.varsel.Produsent
@@ -23,59 +32,89 @@ class VarseltekstRoutesTest {
     }
 
     @Test
-    fun `teller totalt antall varseltekster`() {
+    fun `teller totalt antall varseltekster`() = testApi {
         fillDb(10, "Hei!")
         fillDb(5, "Hallo!")
 
-        val sammendrag = varseltekstRepository.finnForenkletSammendrag(
-            Teksttype.WebTekst,
-            varseltype = null,
-            maksAlderDager = null
-        )
+        val telteAntall = client.get("/antall/${Teksttype.WebTekst}/totalt")
+            .json()
 
-        sammendrag.first { it.tekst == "Hei!" }.antall shouldBe 10
-        sammendrag.first { it.tekst == "Hallo!" }.antall shouldBe 5
 
-        sammendrag.sumOf { it.antall } shouldBe 15
+        telteAntall.first { it["tekst"].asText() == "Hei!" }["antall"].asInt() shouldBe 10
+        telteAntall.first { it["tekst"].asText() == "Hallo!" }["antall"].asInt() shouldBe 5
+
+        telteAntall.sumOf { it["antall"].asInt() } shouldBe 15
     }
 
     @Test
-    fun `teller totalt antall varseltekster opprettet etter dato`() {
+    fun `teller totalt antall varseltekster opprettet etter dato`() = testApi {
         fillDb(7, "Ny!", tidspunkt = LocalDateTime.now())
         fillDb(5, "Gammel!", tidspunkt = LocalDateTime.now().minusDays(10))
 
-        val sammendrag = varseltekstRepository.finnForenkletSammendrag(
-            Teksttype.WebTekst,
-            varseltype = null,
-            maksAlderDager = 5
-        )
+        val telteAntall = client.get("/antall/${Teksttype.WebTekst}/totalt?maksAlderDager=5")
+            .json()
 
-        sammendrag.first { it.tekst == "Ny!" }.antall shouldBe 7
-        sammendrag.find { it.tekst == "Gammel!" }?.antall shouldBe null
 
-        sammendrag.sumOf { it.antall } shouldBe 7
+        telteAntall.first { it["tekst"].asText() == "Ny!" }["antall"].asInt() shouldBe 7
+        telteAntall.firstOrNull { it["tekst"].asText() == "Gammel!" }.shouldBeNull()
+
+        telteAntall.sumOf { it["antall"].asInt() } shouldBe 7
     }
 
     @Test
-    fun `teller totalt antall varseltekster av type`() {
+    fun `teller totalt antall varseltekster av type`() = testApi {
         fillDb(3, "Beskjed!", varseltype = "beskjed")
         fillDb(5, "Oppgave!", varseltype = "oppgave")
         fillDb(7, "Innboks!", varseltype = "innboks")
 
-        val sammendrag = varseltekstRepository.finnForenkletSammendrag(
-            Teksttype.WebTekst,
-            varseltype = "innboks",
-            maksAlderDager = null
-        ).first()
+        val telteAntall = client.get("/antall/${Teksttype.WebTekst}/totalt?varselType=innboks")
+            .json()
 
-        sammendrag.antall shouldBe 7
-        sammendrag.tekst shouldBe "Innboks!"
+        telteAntall.sumOf { it["antall"].asInt() } shouldBe 7
+    }
+
+    @Test
+    fun `teller uten standardtekst som default`() = testApi {
+        fillDb(3, smsSendt = true, smsTekst = "En sms med egendefinert tekst!")
+        fillDb(7, smsSendt = true, smsTekst = null)
+
+        val telteAntall = client.get("/antall/${Teksttype.SmsTekst}/totalt")
+            .json()
+
+        telteAntall.sumOf { it["antall"].asInt() } shouldBe 3
+    }
+
+    @Test
+    fun `teller med standardtekst hvis forespurt`() = testApi {
+        fillDb(3, smsSendt = true, smsTekst = "En sms med egendefinert tekst!")
+        fillDb(7, smsSendt = true, smsTekst = null)
+
+        val telteAntall = client.get("/antall/${Teksttype.SmsTekst}/totalt?standardtekster=true")
+            .json()
+
+        telteAntall.sumOf { it["antall"].asInt() } shouldBe 10
+    }
+
+    @Test
+    fun `data kommer sortert i synkende antall`() = testApi {
+        fillDb(3, "Tekst 1")
+        fillDb(23, "Tekst 2")
+        fillDb(17, "Tekst 3")
+        fillDb(11, "Tekst 4")
+        fillDb(29, "Tekst 5")
+
+        val telteAntall = client.get("/antall/${Teksttype.WebTekst}/totalt")
+            .json()
+
+        telteAntall.shouldBeSortedDescendingBy { it["antall"].asInt() }
     }
 
     private fun fillDb(
         antall: Int,
         webTekst: String = "Hei hallo på min side",
+        smsSendt: Boolean = false,
         smsTekst: String? = null,
+        epostSendt: Boolean = false,
         epostTekst: String? = null,
         epostTittel: String? = null,
         varseltype: String = "beskjed",
@@ -88,9 +127,9 @@ class VarseltekstRoutesTest {
                 eventType = varseltype,
                 producerNamespace = produsent.namespace,
                 producerAppnavn = produsent.appnavn,
-                eksternVarsling = smsTekst != null || epostTekst != null,
-                preferertKanalSms = smsTekst != null,
-                preferertKanalEpost = epostTekst != null,
+                eksternVarsling = smsSendt || epostSendt,
+                preferertKanalSms = smsSendt,
+                preferertKanalEpost = epostSendt,
                 webTekst = webTekst,
                 smsTekst = smsTekst,
                 epostTittel = epostTittel,
@@ -101,4 +140,22 @@ class VarseltekstRoutesTest {
             }
         }
     }
+
+    @KtorDsl
+    private fun testApi(
+        block: suspend ApplicationTestBuilder.() -> Unit
+    ) = testApplication {
+
+        application {
+            varseltekstApi(
+                varseltekstRepository,
+            )
+        }
+
+        block()
+    }
+
+    private val objectMapper = jacksonObjectMapper()
+
+    private suspend fun HttpResponse.json() = bodyAsText().let { objectMapper.readTree(it) }
 }
