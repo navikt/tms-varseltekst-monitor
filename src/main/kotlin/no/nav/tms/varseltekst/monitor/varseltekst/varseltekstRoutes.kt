@@ -48,7 +48,7 @@ fun Route.varseltekstRoutes(varseltekstRepository: VarseltekstRepository) {
                 HttpHeaders.ContentDisposition,
                 ContentDisposition.Attachment.withParameter(
                     ContentDisposition.Parameters.FileName,
-                    "totalt_antall.xls"
+                    "totalt_antall.xlsx"
                 ).toString()
             )
             call.respondOutputStream {
@@ -73,7 +73,7 @@ fun Route.varseltekstRoutes(varseltekstRepository: VarseltekstRepository) {
                 HttpHeaders.ContentDisposition,
                 ContentDisposition.Attachment.withParameter(
                     ContentDisposition.Parameters.FileName,
-                    "antall.xls"
+                    "antall.xlsx"
                 ).toString()
             )
             call.respondOutputStream {
