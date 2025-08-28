@@ -23,6 +23,8 @@ repositories {
 }
 
 dependencies {
+    implementation(Apache.poi)
+    implementation(Apache.ooxml)
     implementation(Flyway.core)
     implementation(Flyway.postgres)
     implementation(Hikari.cp)
