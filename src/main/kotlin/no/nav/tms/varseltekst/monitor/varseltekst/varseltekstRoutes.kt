@@ -81,11 +81,28 @@ fun Route.varseltekstRoutes(varseltekstRepository: VarseltekstRepository) {
         }
     }
 
+    var lastRequest: DownloadRequest? = null
+
     post("/download") {
 
         val request: DownloadRequest = call.receive()
 
+        lastRequest = request
+
         if (request.detaljert) {
+            downloadAntall(request)
+        } else {
+            downloadTotaltAntall(request)
+        }
+    }
+
+    get("/debug/repeat-download") {
+
+        val request = lastRequest
+
+        if (request == null) {
+            call.respond(HttpStatusCode.NoContent)
+        } else if (request.detaljert) {
             downloadAntall(request)
         } else {
             downloadTotaltAntall(request)
