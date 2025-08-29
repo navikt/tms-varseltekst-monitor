@@ -11,7 +11,7 @@ object ExcelWriter {
     fun totaltAntallToExcelSheet(teksttype: Teksttype, totaltAntall: List<TotaltAntall>, minAntall: Int): Workbook {
         val (workbook, sheet) = initWorkbook(teksttype, "Antall", "Tekst")
 
-        sheet.setColumnWidth(1, 20000)
+        sheet.setColumnWidth(1, 25000)
 
         val antallTekster = sladdTekster(totaltAntall, minAntall)
 
@@ -37,7 +37,7 @@ object ExcelWriter {
 
         sheet.setColumnWidth(2, 3000)
         sheet.setColumnWidth(3, 5000)
-        sheet.setColumnWidth(4, 20000)
+        sheet.setColumnWidth(4, 25000)
 
         val antallTekster = sladdDetaljerteTekster(detaljertAntall, minAntall)
 
