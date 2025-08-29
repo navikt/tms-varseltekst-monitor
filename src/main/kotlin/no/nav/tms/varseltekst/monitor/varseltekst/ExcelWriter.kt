@@ -11,7 +11,7 @@ object ExcelWriter {
     fun totaltAntallToExcelSheet(teksttype: Teksttype, totaltAntall: List<TotaltAntall>, minAntall: Int): Workbook {
         val (workbook, sheet) = initWorkbook(teksttype, "Antall", "Tekst")
 
-        sheet.setColumnWidth(1, 25000)
+        sheet.setColumnWidth(1, 20000)
 
         val antallTekster = sladdTekster(totaltAntall, minAntall)
 
@@ -35,9 +35,9 @@ object ExcelWriter {
     fun antallToExcelSheet(teksttype: Teksttype, detaljertAntall: List<DetaljertAntall>, minAntall: Int): Workbook {
         val (workbook, sheet) = initWorkbook(teksttype, "Antall", "Varseltype", "Namespace", "Appnavn", "Tekst")
 
-        sheet.setColumnWidth(2, 4000)
-        sheet.setColumnWidth(3, 6000)
-        sheet.setColumnWidth(4, 250000)
+        sheet.setColumnWidth(2, 3000)
+        sheet.setColumnWidth(3, 5000)
+        sheet.setColumnWidth(4, 20000)
 
         val antallTekster = sladdDetaljerteTekster(detaljertAntall, minAntall)
 
@@ -116,8 +116,6 @@ object ExcelWriter {
 
         val headerStyle = workbook.createCellStyle().also { style ->
             workbook.createFont().also {
-                it.fontName = "Arial"
-                it.fontHeightInPoints = 16
                 it.bold = true
             }.let {
                 style.setFont(it)
