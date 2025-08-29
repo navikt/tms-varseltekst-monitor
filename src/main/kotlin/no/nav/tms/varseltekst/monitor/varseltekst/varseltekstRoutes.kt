@@ -81,7 +81,7 @@ fun Route.varseltekstRoutes(varseltekstRepository: VarseltekstRepository) {
         }
     }
 
-    post("/antall/download") {
+    post("/download") {
 
         val request: DownloadRequest = call.receive()
 
