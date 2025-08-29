@@ -15,6 +15,7 @@ import no.nav.tms.varseltekst.monitor.varsel.VarselOversikt
 import no.nav.tms.varseltekst.monitor.varsel.VarselRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
 
@@ -49,14 +50,31 @@ class TotaltAntallRouteTest {
         fillDb(7, "Ny!", tidspunkt = LocalDateTime.now())
         fillDb(5, "Gammel!", tidspunkt = LocalDateTime.now().minusDays(10))
 
-        val telteAntall = client.get("/antall/${Teksttype.WebTekst}/totalt?maksAlderDager=5")
-            .json()
+        val fiveDaysAgo = LocalDate.now().minusDays(5)
 
+        val telteAntall = client.get("/antall/${Teksttype.WebTekst}/totalt?startDato=$fiveDaysAgo")
+            .json()
 
         telteAntall.first { it["tekst"].asText() == "Ny!" }["antall"].asInt() shouldBe 7
         telteAntall.firstOrNull { it["tekst"].asText() == "Gammel!" }.shouldBeNull()
 
         telteAntall.sumOf { it["antall"].asInt() } shouldBe 7
+    }
+
+    @Test
+    fun `teller totalt antall varseltekster opprettet før dato`() = testApi {
+        fillDb(7, "Ny!", tidspunkt = LocalDateTime.now())
+        fillDb(5, "Gammel!", tidspunkt = LocalDateTime.now().minusDays(10))
+
+        val fiveDaysAgo = LocalDate.now().minusDays(5)
+
+        val telteAntall = client.get("/antall/${Teksttype.WebTekst}/totalt?sluttDato=$fiveDaysAgo")
+            .json()
+
+        telteAntall.firstOrNull() { it["tekst"].asText() == "Ny!" }.shouldBeNull()
+        telteAntall.first() { it["tekst"].asText() == "Gammel!" }["antall"].asInt() shouldBe 5
+
+        telteAntall.sumOf { it["antall"].asInt() } shouldBe 5
     }
 
     @Test

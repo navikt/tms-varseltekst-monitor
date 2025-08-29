@@ -1,11 +1,12 @@
 package no.nav.tms.varseltekst.monitor.varseltekst
 
+import com.fasterxml.jackson.annotation.JsonAlias
 import io.ktor.http.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import java.io.File
-import java.io.FileOutputStream
-
+import java.time.LocalDate
+import kotlin.math.max
 
 fun Route.varseltekstRoutes(varseltekstRepository: VarseltekstRepository) {
     get("/antall/{teksttype}/totalt") {
@@ -13,7 +14,8 @@ fun Route.varseltekstRoutes(varseltekstRepository: VarseltekstRepository) {
         varseltekstRepository.tellAntallVarselteksterTotalt(
             teksttype = call.teksttype(),
             varseltype = call.varseltype(),
-            maksAlderDager = call.maksAlderDager(),
+            startDato = call.startDato(),
+            sluttDato = call.sluttDato(),
             inkluderStandardtekster = call.inkluderStandardtekster()
         ).let {
             call.respond(it)
@@ -25,49 +27,26 @@ fun Route.varseltekstRoutes(varseltekstRepository: VarseltekstRepository) {
         varseltekstRepository.tellAntallVarseltekster(
             teksttype = call.teksttype(),
             varseltype = call.varseltype(),
-            maksAlderDager = call.maksAlderDager(),
+            startDato = call.startDato(),
+            sluttDato = call.sluttDato(),
             inkluderStandardtekster = call.inkluderStandardtekster()
         ).let {
             call.respond(it)
         }
     }
 
-    get("/antall/{teksttype}/totalt/download") {
+    post("/antall/download") {
 
-        val teksttype = call.teksttype()
-
-        varseltekstRepository.tellAntallVarselteksterTotalt(
-            teksttype = teksttype,
-            varseltype = call.varseltype(),
-            maksAlderDager = call.maksAlderDager(),
-            inkluderStandardtekster = call.inkluderStandardtekster()
-        ).let {
-            val workbook = ExcelWriter.totaltAntallToExcelSheet(teksttype, it)
-
-            call.response.header(
-                HttpHeaders.ContentDisposition,
-                ContentDisposition.Attachment.withParameter(
-                    ContentDisposition.Parameters.FileName,
-                    "totalt_antall.xlsx"
-                ).toString()
-            )
-            call.respondOutputStream {
-                workbook.write(this)
-            }
-        }
-    }
-
-    get("/antall/{teksttype}/download") {
-
-        val teksttype = call.teksttype()
+        val request: DownloadRequest = call.receive()
 
         varseltekstRepository.tellAntallVarseltekster(
-            teksttype = teksttype,
-            varseltype = call.varseltype(),
-            maksAlderDager = call.maksAlderDager(),
-            inkluderStandardtekster = call.inkluderStandardtekster()
+            teksttype = request.teksttype,
+            varseltype = request.varseltype,
+            startDato = request.startDato,
+            sluttDato = request.sluttDato,
+            inkluderStandardtekster = request.inkluderStandardtekster
         ).let {
-            val workbook = ExcelWriter.antallToExcelSheet(teksttype, it)
+            val workbook = ExcelWriter.antallToExcelSheet(request.teksttype, it)
 
             call.response.header(
                 HttpHeaders.ContentDisposition,
@@ -83,15 +62,32 @@ fun Route.varseltekstRoutes(varseltekstRepository: VarseltekstRepository) {
     }
 }
 
-private fun RoutingCall.teksttype() = request.pathVariables["teksttype"]
-    ?.let { Teksttype.parse(it) }
-    ?: throw IllegalArgumentException("Ugyldig teksttype")
+data class DownloadRequest(
+    @JsonAlias("teksttype") private val _teksttype: String,
+    val detaljert: Boolean = false,
+    val varseltype: String? = null,
+    val startDato: LocalDate? = null,
+    val sluttDato: LocalDate? = null,
+    val inkluderStandardtekster: Boolean = false,
+    @JsonAlias("minAntall") val _minAntall: Int = 100
+) {
+    val teksttype = Teksttype.parse(_teksttype)
+    val minAntall = max(100, _minAntall)
+}
+
+    private fun RoutingCall.teksttype() = request.pathVariables["teksttype"]
+        ?.let { Teksttype.parse(it) }
+        ?: throw IllegalArgumentException("Ugyldig teksttype")
 
 
-private fun RoutingCall.varseltype() = request.queryParameters["varseltype"]
+    private fun RoutingCall.varseltype() = request.queryParameters["varseltype"]
 
-private fun RoutingCall.maksAlderDager() = request.queryParameters["maksAlderDager"]
-    ?.toLong()
+    private fun RoutingCall.startDato() = request.queryParameters["startDato"]
+        ?.let(LocalDate::parse)
 
-private fun RoutingCall.inkluderStandardtekster() = request.queryParameters["standardtekster"]
-    ?.toBoolean() ?: false
+    private fun RoutingCall.sluttDato() = request.queryParameters["sluttDato"]
+        ?.let(LocalDate::parse)
+
+    private fun RoutingCall.inkluderStandardtekster() = request.queryParameters["standardtekster"]
+        ?.toBoolean() ?: false
+
