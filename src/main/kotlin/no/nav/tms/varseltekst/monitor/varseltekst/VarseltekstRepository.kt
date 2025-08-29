@@ -18,15 +18,16 @@ class VarseltekstRepository(private val database: Database) {
 
     fun tellAntallVarselteksterTotalt(
         teksttype: Teksttype,
-        maksAlderDager: Long?,
         varseltype: String?,
+        startDato: LocalDate?,
+        sluttDato: LocalDate?,
         inkluderStandardtekster: Boolean
     ): List<VarselTekster.TotaltAntall> {
 
-        val egendefinerteTekster = tellEgendefinerteTeksterTotalt(teksttype, maksAlderDager, varseltype)
+        val egendefinerteTekster = tellEgendefinerteTeksterTotalt(teksttype, varseltype, startDato, sluttDato)
 
         return if (inkluderStandardtekster && teksttype != Teksttype.WebTekst) {
-            egendefinerteTekster + tellStandandardteksterTotalt(teksttype, maksAlderDager, varseltype)
+            egendefinerteTekster + tellStandandardteksterTotalt(teksttype, varseltype, startDato, sluttDato)
         } else {
             egendefinerteTekster
         }.sortedByDescending {
@@ -36,15 +37,16 @@ class VarseltekstRepository(private val database: Database) {
 
     fun tellAntallVarseltekster(
         teksttype: Teksttype,
-        maksAlderDager: Long?,
         varseltype: String?,
+        startDato: LocalDate?,
+        sluttDato: LocalDate?,
         inkluderStandardtekster: Boolean
     ): List<VarselTekster.DetaljertAntall> {
 
-        val egendefinerteTekster = tellEgendefinerteTekster(teksttype, maksAlderDager, varseltype)
+        val egendefinerteTekster = tellEgendefinerteTekster(teksttype, varseltype, startDato, sluttDato)
 
         return if (inkluderStandardtekster && teksttype != Teksttype.WebTekst) {
-            egendefinerteTekster + tellStandandardtekster(teksttype, maksAlderDager, varseltype)
+            egendefinerteTekster + tellStandandardtekster(teksttype, varseltype, startDato, sluttDato)
         } else {
             egendefinerteTekster
         }.sortedByDescending {
@@ -54,8 +56,9 @@ class VarseltekstRepository(private val database: Database) {
 
     private fun tellEgendefinerteTeksterTotalt(
         teksttype: Teksttype,
-        maksAlderDager: Long?,
         varseltype: String?,
+        startDato: LocalDate?,
+        sluttDato: LocalDate?,
     ): List<VarselTekster.TotaltAntall> {
         return database.list {
             queryOf("""
@@ -65,13 +68,15 @@ class VarseltekstRepository(private val database: Database) {
                 from
                     varsel join ${teksttype.columnTableName} tt on ${teksttype.columnTableName} = tt.id
                 where
-                    ((:dato)::timestamp is null or varsel.varseltidspunkt > :dato) and
+                    ((:startDato)::timestamp is null or varsel.varseltidspunkt > :startDato) and
+                    ((:sluttDato)::timestamp is null or varsel.varseltidspunkt < :sluttDato) and
                     ((:varseltype)::text is null or varsel.event_type = :varseltype)
                 group by tt.tekst
                 order by antall desc
             """,
                 mapOf(
-                    "dato" to maksAlderDager?.let { LocalDate.now().minusDays(it) },
+                    "startDato" to startDato,
+                    "sluttDato" to sluttDato,
                     "varseltype" to varseltype
                 )
             )
@@ -86,8 +91,9 @@ class VarseltekstRepository(private val database: Database) {
 
     private fun tellEgendefinerteTekster(
         teksttype: Teksttype,
-        maksAlderDager: Long?,
         varseltype: String?,
+        startDato: LocalDate?,
+        sluttDato: LocalDate?
     ): List<VarselTekster.DetaljertAntall> {
         return database.list {
             queryOf("""
@@ -100,13 +106,15 @@ class VarseltekstRepository(private val database: Database) {
                 from
                     varsel join ${teksttype.columnTableName} tt on ${teksttype.columnTableName} = tt.id
                 where
-                    ((:dato)::timestamp is null or varsel.varseltidspunkt > :dato) and
+                    ((:startDato)::timestamp is null or varsel.varseltidspunkt > :startDato) and
+                    ((:sluttDato)::timestamp is null or varsel.varseltidspunkt < :sluttDato) and
                     ((:varseltype)::text is null or varsel.event_type = :varseltype)
                 group by tt.tekst, varseltype, namespace, appnavn
                 order by antall desc
             """,
                 mapOf(
-                    "dato" to maksAlderDager?.let { LocalDate.now().minusDays(it) },
+                    "startDato" to startDato,
+                    "sluttDato" to sluttDato,
                     "varseltype" to varseltype
                 )
             )
@@ -124,8 +132,9 @@ class VarseltekstRepository(private val database: Database) {
 
     private fun tellStandandardteksterTotalt(
         teksttype: Teksttype,
-        maksAlderDager: Long?,
         varseltype: String?,
+        startDato: LocalDate?,
+        sluttDato: LocalDate?,
     ): VarselTekster.TotaltAntall {
 
         return database.single {
@@ -136,12 +145,14 @@ class VarseltekstRepository(private val database: Database) {
                     varsel
                 where
                     ${teksttype.preferenceColumn} and ${teksttype.columnTableName} is null and
-                    ((:dato)::timestamp is null or varsel.varseltidspunkt > :dato) and
+                    ((:startDato)::timestamp is null or varsel.varseltidspunkt > :startDato) and
+                    ((:sluttDato)::timestamp is null or varsel.varseltidspunkt < :sluttDato) and
                     ((:varseltype)::text is null or varsel.event_type = :varseltype)
                 order by antall desc
             """,
                 mapOf(
-                    "dato" to maksAlderDager?.let { LocalDate.now().minusDays(it) },
+                    "startDato" to startDato,
+                    "sluttDato" to sluttDato,
                     "varseltype" to varseltype
                 )
             )
@@ -156,8 +167,9 @@ class VarseltekstRepository(private val database: Database) {
 
     private fun tellStandandardtekster(
         teksttype: Teksttype,
-        maksAlderDager: Long?,
         varseltype: String?,
+        startDato: LocalDate?,
+        sluttDato: LocalDate?
     ): List<VarselTekster.DetaljertAntall> {
 
         return database.list {
@@ -171,13 +183,15 @@ class VarseltekstRepository(private val database: Database) {
                     varsel
                 where
                     ${teksttype.preferenceColumn} and ${teksttype.columnTableName} is null and
-                    ((:dato)::timestamp is null or varsel.varseltidspunkt > :dato) and
+                    ((:startDato)::timestamp is null or varsel.varseltidspunkt > :startDato) and
+                    ((:sluttDato)::timestamp is null or varsel.varseltidspunkt < :sluttDato) and
                     ((:varseltype)::text is null or varsel.event_type = :varseltype)
                 group by varseltype, namespace, appnavn
                 order by antall desc
             """,
                 mapOf(
-                    "dato" to maksAlderDager?.let { LocalDate.now().minusDays(it) },
+                    "startDato" to startDato,
+                    "sluttDato" to sluttDato,
                     "varseltype" to varseltype
                 )
             )
