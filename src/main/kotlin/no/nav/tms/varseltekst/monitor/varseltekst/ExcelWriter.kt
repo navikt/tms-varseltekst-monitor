@@ -9,7 +9,7 @@ object ExcelWriter {
     fun totaltAntallToExcelSheet(teksttype: Teksttype, totaltAntall: List<VarselTekster.TotaltAntall>): Workbook {
         val (workbook, sheet) = initWorkbook(teksttype, "Antall", "Tekst")
 
-        sheet.setColumnWidth(1, 20000)
+        sheet.setColumnWidth(1, 25000)
 
         totaltAntall.forEachIndexed { i, antall ->
             val row = sheet.createRow(i + 1)
@@ -33,7 +33,7 @@ object ExcelWriter {
 
         sheet.setColumnWidth(2, 3000)
         sheet.setColumnWidth(3, 5000)
-        sheet.setColumnWidth(4, 20000)
+        sheet.setColumnWidth(4, 25000)
 
         totaltAntall.forEachIndexed { i, antall ->
             val row = sheet.createRow(i + 1)

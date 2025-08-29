@@ -73,7 +73,7 @@ fun Route.varseltekstRoutes(varseltekstRepository: VarseltekstRepository) {
                 HttpHeaders.ContentDisposition,
                 ContentDisposition.Attachment.withParameter(
                     ContentDisposition.Parameters.FileName,
-                    "antall.xlsx"
+                    filnavn(request)
                 ).toString()
             )
             call.respondOutputStream {
