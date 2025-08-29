@@ -9,7 +9,7 @@ object ExcelWriter {
     fun totaltAntallToExcelSheet(teksttype: Teksttype, totaltAntall: List<VarselTekster.TotaltAntall>): Workbook {
         val (workbook, sheet) = initWorkbook(teksttype, "Antall", "Tekst")
 
-        sheet.setColumnWidth(1, 100)
+        sheet.setColumnWidth(1, 25000)
 
         totaltAntall.forEachIndexed { i, antall ->
             val row = sheet.createRow(i + 1)
@@ -31,9 +31,9 @@ object ExcelWriter {
     fun antallToExcelSheet(teksttype: Teksttype, totaltAntall: List<VarselTekster.DetaljertAntall>): Workbook {
         val (workbook, sheet) = initWorkbook(teksttype, "Antall", "Varseltype", "Namespace", "Appnavn", "Tekst")
 
-        sheet.setColumnWidth(2, 15)
-        sheet.setColumnWidth(3, 25)
-        sheet.setColumnWidth(4, 100)
+        sheet.setColumnWidth(2, 4000)
+        sheet.setColumnWidth(3, 6000)
+        sheet.setColumnWidth(4, 250000)
 
         totaltAntall.forEachIndexed { i, antall ->
             val row = sheet.createRow(i + 1)
@@ -76,6 +76,8 @@ object ExcelWriter {
 
         val headerStyle = workbook.createCellStyle().also { style ->
             workbook.createFont().also {
+                it.fontName = "Arial"
+                it.fontHeightInPoints = 16
                 it.bold = true
             }.let {
                 style.setFont(it)
