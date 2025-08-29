@@ -6,16 +6,6 @@ import java.time.LocalDate
 
 class VarseltekstRepository(private val database: Database) {
 
-    private val totalDefaultBaseQuery = """
-        select 
-            count(*) as antall
-        from
-            varsel
-        where 
-            :preferert_column and
-            :id_column is null
-    """
-
     fun tellAntallVarselteksterTotalt(
         teksttype: Teksttype,
         varseltype: String?,
@@ -58,7 +48,7 @@ class VarseltekstRepository(private val database: Database) {
         teksttype: Teksttype,
         varseltype: String?,
         startDato: LocalDate?,
-        sluttDato: LocalDate?,
+        sluttDato: LocalDate?
     ): List<VarselTekster.TotaltAntall> {
         return database.list {
             queryOf("""
@@ -121,8 +111,10 @@ class VarseltekstRepository(private val database: Database) {
                 .map {
                     VarselTekster.DetaljertAntall(
                         varseltype = it.string("varseltype"),
-                        produsentNamespace = it.string("namespace"),
-                        produsentAppnavn = it.string("appnavn"),
+                        produsent = VarselTekster.Produsent(
+                            namespace = it.string("namespace"),
+                            appnavn = it.string("appnavn")
+                        ),
                         antall = it.int("antall"),
                         tekst = it.string("tekst")
                     )
@@ -159,7 +151,7 @@ class VarseltekstRepository(private val database: Database) {
                 .map {
                     VarselTekster.TotaltAntall(
                         antall = it.int("antall"),
-                        tekst = "<standardtekst>"
+                        tekst = null
                     )
                 }.asSingle
         }
@@ -198,10 +190,12 @@ class VarseltekstRepository(private val database: Database) {
                 .map {
                     VarselTekster.DetaljertAntall(
                         varseltype = it.string("varseltype"),
-                        produsentNamespace = it.string("namespace"),
-                        produsentAppnavn = it.string("appnavn"),
+                        produsent = VarselTekster.Produsent(
+                            namespace = it.string("namespace"),
+                            appnavn = it.string("appnavn")
+                        ),
                         antall = it.int("antall"),
-                        tekst = "<standardtekst>"
+                        tekst = null
                     )
                 }.asList
         }

@@ -35,10 +35,7 @@ fun Route.varseltekstRoutes(varseltekstRepository: VarseltekstRepository) {
         }
     }
 
-    post("/antall/download") {
-
-        val request: DownloadRequest = call.receive()
-
+    suspend fun RoutingContext.downloadAntall(request: DownloadRequest) {
         varseltekstRepository.tellAntallVarseltekster(
             teksttype = request.teksttype,
             varseltype = request.varseltype,
@@ -46,7 +43,7 @@ fun Route.varseltekstRoutes(varseltekstRepository: VarseltekstRepository) {
             sluttDato = request.sluttDato,
             inkluderStandardtekster = request.inkluderStandardtekster
         ).let {
-            val workbook = ExcelWriter.antallToExcelSheet(request.teksttype, it)
+            val workbook = ExcelWriter.antallToExcelSheet(request.teksttype, it, request.minimumAntall)
 
             call.response.header(
                 HttpHeaders.ContentDisposition,
@@ -60,8 +57,49 @@ fun Route.varseltekstRoutes(varseltekstRepository: VarseltekstRepository) {
             }
         }
     }
+
+    suspend fun RoutingContext.downloadTotaltAntall(request: DownloadRequest) {
+        varseltekstRepository.tellAntallVarselteksterTotalt(
+            teksttype = request.teksttype,
+            varseltype = request.varseltype,
+            startDato = request.startDato,
+            sluttDato = request.sluttDato,
+            inkluderStandardtekster = request.inkluderStandardtekster
+        ).let {
+            val workbook = ExcelWriter.totaltAntallToExcelSheet(request.teksttype, it, request.minimumAntall)
+
+            call.response.header(
+                HttpHeaders.ContentDisposition,
+                ContentDisposition.Attachment.withParameter(
+                    ContentDisposition.Parameters.FileName,
+                    filnavn(request)
+                ).toString()
+            )
+            call.respondOutputStream {
+                workbook.write(this)
+            }
+        }
+    }
+
+    post("/antall/download") {
+
+        val request: DownloadRequest = call.receive()
+
+        if (request.detaljert) {
+            downloadAntall(request)
+        } else {
+            downloadTotaltAntall(request)
+        }
+    }
 }
 
+private fun filnavn(request: DownloadRequest): String {
+    return when {
+        request.filnavn == null -> "${LocalDate.now()}-varseltekster-${request.teksttype.name.lowercase()}-${if (request.detaljert) "" else "totalt-"}antall.xlsx"
+        request.filnavn.endsWith(".xlsx") -> request.filnavn
+        else -> "${request.filnavn}.xlsx"
+    }
+}
 data class DownloadRequest(
     @JsonAlias("teksttype") private val _teksttype: String,
     val detaljert: Boolean = false,
@@ -69,10 +107,11 @@ data class DownloadRequest(
     val startDato: LocalDate? = null,
     val sluttDato: LocalDate? = null,
     val inkluderStandardtekster: Boolean = false,
-    @JsonAlias("minAntall") val _minAntall: Int = 100
+    @JsonAlias("minimumAntall") private val _minimumAntall: Int = 100,
+    val filnavn: String? = null
 ) {
     val teksttype = Teksttype.parse(_teksttype)
-    val minAntall = max(100, _minAntall)
+    val minimumAntall = max(100, _minimumAntall)
 }
 
     private fun RoutingCall.teksttype() = request.pathVariables["teksttype"]

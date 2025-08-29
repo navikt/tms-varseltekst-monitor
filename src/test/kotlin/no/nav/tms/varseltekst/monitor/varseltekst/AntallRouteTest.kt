@@ -54,9 +54,9 @@ class AntallRouteTest {
         val telteAntall = client.get("/antall/${Teksttype.WebTekst}")
             .json()
 
-        telteAntall.first { it["produsentAppnavn"].asText() == "appen" }["antall"].asInt() shouldBe 3
-        telteAntall.first { it["produsentAppnavn"].asText() == "appto" }["antall"].asInt() shouldBe 5
-        telteAntall.first { it["produsentAppnavn"].asText() == "app-api" }["antall"].asInt() shouldBe 13
+        telteAntall.first { it["produsent"]["appnavn"].asText() == "appen" }["antall"].asInt() shouldBe 3
+        telteAntall.first { it["produsent"]["appnavn"].asText() == "appto" }["antall"].asInt() shouldBe 5
+        telteAntall.first { it["produsent"]["appnavn"].asText() == "app-api" }["antall"].asInt() shouldBe 13
 
         telteAntall.sumOf { it["antall"].asInt() } shouldBe 21
     }
