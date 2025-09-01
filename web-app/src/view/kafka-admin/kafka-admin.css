@@ -1,0 +1,54 @@
+.kafka-admin {
+  display: grid;
+  grid-column-gap: 2rem;
+  grid-template-rows: 1fr;
+  grid-template-columns: 540px 1fr;
+}
+.kafka-admin__col > *:not(:last-child) {
+  margin-bottom: 2rem;
+}
+.kafka-admin__spinner {
+  margin: 2rem auto auto;
+}
+.kafka-record-value {
+  max-width: 400px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.varseltekster-card__loader {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: 2rem auto;
+}
+.kafka-record-row {
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.kafka-record-row:hover {
+  transform: scale(1.02);
+  background: rgba(0, 0, 0, 0.12);
+}
+.varseltekster-card__loader-timer {
+  color: var(--a-gray-900);
+}
+.tabell {
+  border-collapse: collapse;
+  border-spacing: 0;
+  text-align: left;
+}
+.tabell th {
+  border-bottom: solid 1px black;
+}
+.tabell tr:nth-child(even) {
+  background-color: var(--a-gray-100);
+}
+.tabell td, .tabell th {
+  padding: 0.5rem;
+}
+.tabell td {
+  font-family: monospace;
+  font-size: 1rem;
+}

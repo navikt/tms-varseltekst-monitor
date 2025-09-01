@@ -45,6 +45,15 @@ spec:
           day: 1
           hour: 4
         cascadingDelete: false
+  ingresses:
+    - "https://tms-varseltekst-monitor.ansatt.dev.nav.no"
+  azure:
+    application:
+      enabled: true
+      allowAllUsers: true
+    sidecar:
+      enabled: true
+      autoLogin: true
   kafka:
     pool: nav-dev
   env:
