@@ -39,8 +39,8 @@ function ReadFromTopicCard() {
 	const [teksttypeField, setTeksttypeField] = useState<Teksttype>(Teksttype.WEB_TEKST);
 	const [varseltypeField, setVarseltypeField] = useState<Varseltype>(Varseltype.ALLE);
 	const [detaljertField, setDetaljertField] = useState<boolean>(false);
-	const [fromDateField, setFromDateField] = useState<string | null>(null);
-	const [toDateField, setToDateField] = useState<string | null>(null);
+	const [fromDateField, setFromDateField] = useState<string>('');
+	const [toDateField, setToDateField] = useState<string>('');
 
 	async function handleDownload() {
 		setIsLoading(true);
@@ -57,8 +57,8 @@ function ReadFromTopicCard() {
 			teksttype: teksttypeField,
 			detaljert: detaljertField,
 			varseltype: varseltype,
-			startDato: fromDateField,
-			sluttDato: toDateField,
+			startDato: fromDateField ? fromDateField : null,
+			sluttDato: toDateField ? toDateField : null,
 			inkluderStandardtekster: true,
 			minimumAntall: 100,
 			filnavn: null,
@@ -115,8 +115,8 @@ function ReadFromTopicCard() {
 			</Select>
 
 			<DatePicker>
-				<DatePicker.Input label="Fra og med" onChange={e => setFromDateField(e.target.value)}/>
-				<DatePicker.Input label="Til" onChange={e => setToDateField(e.target.value)}/>
+				<DatePicker.Input label="Fra og med" value={fromDateField} onChange={e => setFromDateField(e.target.value)}/>
+				<DatePicker.Input label="Til" value={toDateField} onChange={e => setToDateField(e.target.value)}/>
 			</DatePicker>
 
 			{!isLoading ? (
