@@ -7,8 +7,9 @@ import org.apache.poi.xssf.usermodel.XSSFSheet
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
 
-object ExcelWriter {
-    fun totaltAntallToExcelSheet(teksttype: Teksttype, totaltAntall: List<TotaltAntall>, minAntall: Int): Workbook {
+object ExcelFileWriter {
+
+    fun totaltAntallToExcelSheet(totaltAntall: List<TotaltAntall>, teksttype: Teksttype, minAntall: Int): Workbook {
         val (workbook, sheet) = initWorkbook(teksttype, "Antall", "Tekst")
 
         sheet.setColumnWidth(1, 25000)
@@ -32,7 +33,7 @@ object ExcelWriter {
         return workbook
     }
 
-    fun antallToExcelSheet(teksttype: Teksttype, detaljertAntall: List<DetaljertAntall>, minAntall: Int): Workbook {
+    fun antallToExcelSheet(detaljertAntall: List<DetaljertAntall>, teksttype: Teksttype, minAntall: Int): Workbook {
         val (workbook, sheet) = initWorkbook(teksttype, "Antall", "Varseltype", "Namespace", "Appnavn", "Tekst")
 
         sheet.setColumnWidth(2, 3000)

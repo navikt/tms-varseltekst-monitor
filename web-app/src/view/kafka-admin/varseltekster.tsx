@@ -7,6 +7,7 @@ import {
 } from '../../api';
 import './kafka-admin.css';
 import { toTimerStr } from '../../utils/date-utils';
+import {response} from "msw";
 
 export function Varseltekster() {
 
@@ -50,43 +51,6 @@ function ReadFromTopicCard() {
 		onDateChange: (date) => setToDateField(date || null),
 	})
 
-
-	function getFileName(response: Response): string | null {
-
-		let disposition = response.headers.get("content-disposition")
-
-		let fileName: string | null = null;
-
-		if (disposition) {
-
-			const utf8FilenameRegex = /filename\*=UTF-8''([\w%\-\.]+)(?:; ?|$)/i;
-			const asciiFilenameRegex = /^filename=(["']?)(.*?[^\\])\1(?:; ?|$)/i;
-
-			if (utf8FilenameRegex.test(disposition)) {
-				let match = utf8FilenameRegex.exec(disposition)
-
-				if (match) {
-					fileName = decodeURIComponent(match[1]);
-				} else {
-					fileName = null
-				}
-			} else {
-				// prevent ReDos attacks by anchoring the ascii regex to string start and
-				//  slicing off everything before 'filename='
-				const filenameStart = disposition.toLowerCase().indexOf('filename=');
-				if (filenameStart >= 0) {
-					const partialDisposition = disposition.slice(filenameStart);
-					const matches = asciiFilenameRegex.exec(partialDisposition);
-					if (matches != null && matches[2]) {
-						fileName = matches[2];
-					}
-				}
-			}
-		}
-
-		return fileName;
-	}
-
 	async function handleDownload() {
 		setIsLoading(true);
 
@@ -110,16 +74,8 @@ function ReadFromTopicCard() {
 		};
 
 		requestDownload(request)
-			.then(response => Promise.all([getFileName(response), response.blob()]))
-			.then(([filename, file]) => {
-				const blob = new Blob([file], {type: 'application/octet-stream'});
-				const downloadUrl = URL.createObjectURL(blob);
-				const a = document.createElement("a");
-				a.href = downloadUrl;
-				a.download = filename ? filename : "varseltekster.xslx";
-				document.body.appendChild(a);
-				a.click();
-			})
+			.then(response => response.headers.get('Location')!!)
+			.then(fileLink => window.open(fileLink, '_self'))
 			.catch(() => errorToast('Klarte ikke laste ned varseltekster'))
 			.finally(() => {
 				setIsLoading(false);
