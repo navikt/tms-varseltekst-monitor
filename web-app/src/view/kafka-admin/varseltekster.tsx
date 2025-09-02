@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { errorToast, successToast, warningToast } from '../../utils/toast-utils';
 import { Card } from '../../component/card/card';
-import {BodyShort, Button, Loader, Modal, RadioGroup, Select, TextField, Radio, DatePicker} from '@navikt/ds-react';
+import {BodyShort, Button, Loader, Modal, RadioGroup, Select, Radio, DatePicker, useDatepicker} from '@navikt/ds-react';
 import {
 	DownloadRequest, requestDownload,
 } from '../../api';
@@ -39,8 +39,17 @@ function ReadFromTopicCard() {
 	const [teksttypeField, setTeksttypeField] = useState<Teksttype>(Teksttype.WEB_TEKST);
 	const [varseltypeField, setVarseltypeField] = useState<Varseltype>(Varseltype.ALLE);
 	const [detaljertField, setDetaljertField] = useState<boolean>(false);
-	const [fromDateField, setFromDateField] = useState<string>('');
-	const [toDateField, setToDateField] = useState<string>('');
+	const [fromDateField, setFromDateField] = useState<Date | null>(null);
+	const [toDateField, setToDateField] = useState<Date | null>(null);
+
+	const fromDatePicker = useDatepicker({
+		onDateChange: (date) => setFromDateField(date || null),
+	})
+
+	const toDatePicker = useDatepicker({
+		onDateChange: (date) => setToDateField(date || null),
+	})
+
 
 	function getFileName(response: Response): string | null {
 
@@ -93,8 +102,8 @@ function ReadFromTopicCard() {
 			teksttype: teksttypeField,
 			detaljert: detaljertField,
 			varseltype: varseltype,
-			startDato: fromDateField ? fromDateField : null,
-			sluttDato: toDateField ? toDateField : null,
+			startDato: fromDateField?.toISOString() || null,
+			sluttDato: toDateField?.toISOString() || null,
 			inkluderStandardtekster: true,
 			minimumAntall: 100,
 			filnavn: null,
@@ -160,9 +169,12 @@ function ReadFromTopicCard() {
 				<option value={Varseltype.INNBOKS}>Innboks</option>
 			</Select>
 
-			<DatePicker>
-				<DatePicker.Input label="Fra og med" value={fromDateField} onChange={e => setFromDateField(e.target.value)}/>
-				<DatePicker.Input label="Til" value={toDateField} onChange={e => setToDateField(e.target.value)}/>
+			<DatePicker {...fromDatePicker.datepickerProps}>
+				<DatePicker.Input {...fromDatePicker.inputProps} label="Fra og med" />
+			</DatePicker>
+
+			<DatePicker {...toDatePicker.datepickerProps}>
+				<DatePicker.Input {...toDatePicker.inputProps} label="Til"/>
 			</DatePicker>
 
 			{!isLoading ? (
