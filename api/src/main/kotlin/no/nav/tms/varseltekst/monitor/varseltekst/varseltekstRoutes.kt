@@ -2,10 +2,14 @@ package no.nav.tms.varseltekst.monitor.varseltekst
 
 import com.fasterxml.jackson.annotation.JsonAlias
 import io.ktor.http.*
+import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.apache.poi.ss.usermodel.Workbook
 import java.time.LocalDate
+import java.util.MissingResourceException
+import java.util.UUID
 import kotlin.math.max
 
 fun Route.varseltekstRoutes(varseltekstRepository: VarseltekstRepository) {
@@ -35,65 +39,67 @@ fun Route.varseltekstRoutes(varseltekstRepository: VarseltekstRepository) {
         }
     }
 
-    suspend fun RoutingContext.downloadAntall(request: DownloadRequest) {
-        varseltekstRepository.tellAntallVarseltekster(
-            teksttype = request.teksttype,
-            varseltype = request.varseltype,
-            startDato = request.startDato,
-            sluttDato = request.sluttDato,
-            inkluderStandardtekster = request.inkluderStandardtekster
-        ).let {
-            val workbook = ExcelWriter.antallToExcelSheet(request.teksttype, it, request.minimumAntall)
-
-            call.response.header(
-                HttpHeaders.ContentDisposition,
-                ContentDisposition.Attachment.withParameter(
-                    ContentDisposition.Parameters.FileName,
-                    filnavn(request)
-                ).toString()
-            )
-            call.respondOutputStream {
-                workbook.write(this)
-            }
-        }
-    }
-
-    suspend fun RoutingContext.downloadTotaltAntall(request: DownloadRequest) {
-        varseltekstRepository.tellAntallVarselteksterTotalt(
-            teksttype = request.teksttype,
-            varseltype = request.varseltype,
-            startDato = request.startDato,
-            sluttDato = request.sluttDato,
-            inkluderStandardtekster = request.inkluderStandardtekster
-        ).let {
-            val workbook = ExcelWriter.totaltAntallToExcelSheet(request.teksttype, it, request.minimumAntall)
-
-            call.response.header(
-                HttpHeaders.ContentDisposition,
-                ContentDisposition.Attachment.withParameter(
-                    ContentDisposition.Parameters.FileName,
-                    filnavn(request)
-                ).toString()
-            )
-            call.respondOutputStream {
-                workbook.write(this)
-            }
-        }
-    }
+    val fileStore = mutableMapOf<String, ExcelFile>()
 
     post("/api/download") {
 
         val request: DownloadRequest = call.receive()
 
-        if (request.detaljert) {
-            downloadAntall(request)
+        val workbook = if (request.detaljert) {
+            varseltekstRepository.tellAntallVarseltekster(
+                teksttype = request.teksttype,
+                varseltype = request.varseltype,
+                startDato = request.startDato,
+                sluttDato = request.sluttDato,
+                inkluderStandardtekster = request.inkluderStandardtekster
+            ).let {
+                ExcelFileWriter.antallToExcelSheet(it, request.teksttype, request.minimumAntall)
+            }
         } else {
-            downloadTotaltAntall(request)
+            varseltekstRepository.tellAntallVarselteksterTotalt(
+                teksttype = request.teksttype,
+                varseltype = request.varseltype,
+                startDato = request.startDato,
+                sluttDato = request.sluttDato,
+                inkluderStandardtekster = request.inkluderStandardtekster
+            ).let {
+                ExcelFileWriter.totaltAntallToExcelSheet(it, request.teksttype, request.minimumAntall)
+            }
+        }
+
+        val fileId = UUID.randomUUID().toString()
+        val filename = filename(request)
+
+        fileStore[fileId] = ExcelFile(filename, workbook)
+
+        call.response.header(HttpHeaders.Location, "/api/download/$fileId")
+        call.respond(HttpStatusCode.Accepted)
+    }
+
+    get("/api/download/{fileId}") {
+        val fileId = call.fileId()
+
+        val excelFile = fileStore.remove(fileId) ?: throw FileNotFoundException(fileId)
+
+        call.response.header(
+            HttpHeaders.ContentDisposition,
+            ContentDisposition.Attachment.withParameter(
+                ContentDisposition.Parameters.FileName,
+                excelFile.filename
+            ).toString()
+        )
+        call.respondOutputStream {
+            excelFile.workbook.write(this)
         }
     }
 }
 
-private fun filnavn(request: DownloadRequest): String {
+private data class ExcelFile(
+    val filename: String,
+    val workbook: Workbook
+)
+
+private fun filename(request: DownloadRequest): String {
     return when {
         request.filnavn == null -> "${LocalDate.now()}-varseltekster-${request.teksttype.name.lowercase()}-${if (request.detaljert) "" else "totalt-"}antall.xlsx"
         request.filnavn.endsWith(".xlsx") -> request.filnavn
@@ -113,19 +119,23 @@ data class DownloadRequest(
     val minimumAntall = max(100, _minimumAntall)
 }
 
-    private fun RoutingCall.teksttype() = request.pathVariables["teksttype"]
-        ?.let { Teksttype.parse(it) }
-        ?: throw IllegalArgumentException("Ugyldig teksttype")
+private fun RoutingCall.teksttype() = request.pathVariables["teksttype"]
+    ?.let { Teksttype.parse(it) }
+    ?: throw IllegalArgumentException("Ugyldig teksttype")
 
 
-    private fun RoutingCall.varseltype() = request.queryParameters["varseltype"]
+private fun RoutingCall.varseltype() = request.queryParameters["varseltype"]
 
-    private fun RoutingCall.startDato() = request.queryParameters["startDato"]
-        ?.let(LocalDate::parse)
+private fun RoutingCall.startDato() = request.queryParameters["startDato"]
+    ?.let(LocalDate::parse)
 
-    private fun RoutingCall.sluttDato() = request.queryParameters["sluttDato"]
-        ?.let(LocalDate::parse)
+private fun RoutingCall.sluttDato() = request.queryParameters["sluttDato"]
+    ?.let(LocalDate::parse)
 
-    private fun RoutingCall.inkluderStandardtekster() = request.queryParameters["standardtekster"]
-        ?.toBoolean() ?: false
+private fun RoutingCall.inkluderStandardtekster() = request.queryParameters["standardtekster"]
+    ?.toBoolean() ?: false
 
+private fun RoutingCall.fileId() = request.pathVariables["fileId"]
+    ?: throw IllegalArgumentException("Mangler fileId")
+
+class FileNotFoundException(val fileId: String): IllegalArgumentException()
