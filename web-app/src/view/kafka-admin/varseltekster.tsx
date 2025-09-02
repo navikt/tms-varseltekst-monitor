@@ -1,13 +1,28 @@
 import React, { useState } from 'react';
 import { errorToast, successToast, warningToast } from '../../utils/toast-utils';
 import { Card } from '../../component/card/card';
-import {BodyShort, Button, Loader, Modal, RadioGroup, Select, Radio, DatePicker, useDatepicker} from '@navikt/ds-react';
+import {
+	BodyShort,
+	Button,
+	Loader,
+	Modal,
+	RadioGroup,
+	Select,
+	Radio,
+	DatePicker,
+	TextField,
+	useDatepicker,
+	Checkbox,
+	CheckboxGroup,
+    Switch
+} from '@navikt/ds-react';
 import {
 	DownloadRequest, requestDownload,
 } from '../../api';
 import './kafka-admin.css';
 import { toTimerStr } from '../../utils/date-utils';
 import {response} from "msw";
+import {number} from "prop-types";
 
 export function Varseltekster() {
 
@@ -42,6 +57,9 @@ function ReadFromTopicCard() {
 	const [detaljertField, setDetaljertField] = useState<boolean>(false);
 	const [fromDateField, setFromDateField] = useState<Date | null>(null);
 	const [toDateField, setToDateField] = useState<Date | null>(null);
+	const [minAntallField, setMinAntallField] = useState<string>('');
+	const [filenameField, setFilenameField] = useState<string>('');
+	const [standardteksterField, setStandardteksterField] = useState<boolean>(false);
 
 	const fromDatePicker = useDatepicker({
 		onDateChange: (date) => setFromDateField(date || null),
@@ -68,9 +86,9 @@ function ReadFromTopicCard() {
 			varseltype: varseltype,
 			startDato: fromDateField?.toISOString() || null,
 			sluttDato: toDateField?.toISOString() || null,
-			inkluderStandardtekster: true,
-			minimumAntall: 100,
-			filnavn: null,
+			inkluderStandardtekster: standardteksterField,
+			minimumAntall: parseInt(minAntallField, 10),
+			filnavn: filenameField || null,
 		};
 
 		requestDownload(request)
@@ -125,6 +143,10 @@ function ReadFromTopicCard() {
 				<option value={Varseltype.INNBOKS}>Innboks</option>
 			</Select>
 
+			<Switch checked={standardteksterField} onChange={(e) => setStandardteksterField(e.target.checked)}>
+				Inkluder standardtekster
+			</Switch>
+
 			<DatePicker {...fromDatePicker.datepickerProps}>
 				<DatePicker.Input {...fromDatePicker.inputProps} label="Fra og med" />
 			</DatePicker>
@@ -132,6 +154,19 @@ function ReadFromTopicCard() {
 			<DatePicker {...toDatePicker.datepickerProps}>
 				<DatePicker.Input {...toDatePicker.inputProps} label="Til"/>
 			</DatePicker>
+
+			<TextField
+				label="Minimum antall for visning av tekst (min 100)"
+				value={minAntallField}
+				inputMode="numeric"
+				onChange={e => setMinAntallField(e.target.value)}
+			/>
+
+			<TextField
+				label="Filnavn (.xlsx)"
+				value={filenameField}
+				onChange={e => setFilenameField(e.target.value)}
+			/>
 
 			{!isLoading ? (
 				<Button id="fetch" onClick={handleDownload} variant="tertiary">
