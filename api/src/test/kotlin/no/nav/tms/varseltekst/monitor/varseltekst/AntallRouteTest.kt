@@ -6,8 +6,10 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.server.auth.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.*
+import no.nav.tms.token.support.azure.validation.mock.azureMock
 import no.nav.tms.varseltekst.monitor.setup.LocalPostgresDatabase
 import no.nav.tms.varseltekst.monitor.setup.clearAllTables
 import no.nav.tms.varseltekst.monitor.varsel.Produsent
@@ -37,7 +39,7 @@ class AntallRouteTest {
         fillDb(3, "Hallo!", varseltype = "innboks")
         fillDb(5, "Hallo!", varseltype = "innboks")
 
-        val telteAntall = client.get("/antall/${Teksttype.WebTekst}")
+        val telteAntall = client.get("/api/antall/${Teksttype.WebTekst}")
             .json()
 
         telteAntall.first { it["varseltype"].asText() == "oppgave" }["antall"].asInt() shouldBe 10
@@ -52,7 +54,7 @@ class AntallRouteTest {
         fillDb(5, "Hallo!", produsent = Produsent("team-tim", "appto"))
         fillDb(13, "Hallo!", produsent = Produsent("team-annet", "app-api"))
 
-        val telteAntall = client.get("/antall/${Teksttype.WebTekst}")
+        val telteAntall = client.get("/api/antall/${Teksttype.WebTekst}")
             .json()
 
         telteAntall.first { it["produsent"]["appnavn"].asText() == "appen" }["antall"].asInt() shouldBe 3
@@ -69,7 +71,7 @@ class AntallRouteTest {
 
         val fiveDaysAgo = LocalDate.now().minusDays(5)
 
-        val telteAntall = client.get("/antall/${Teksttype.WebTekst}?startDato=$fiveDaysAgo")
+        val telteAntall = client.get("/api/antall/${Teksttype.WebTekst}?startDato=$fiveDaysAgo")
             .json()
 
         telteAntall.first { it["tekst"].asText() == "Ny!" }["antall"].asInt() shouldBe 7
@@ -85,7 +87,7 @@ class AntallRouteTest {
 
         val fiveDaysAgo = LocalDate.now().minusDays(5)
 
-        val telteAntall = client.get("/antall/${Teksttype.WebTekst}?sluttDato=$fiveDaysAgo")
+        val telteAntall = client.get("/api/antall/${Teksttype.WebTekst}?sluttDato=$fiveDaysAgo")
             .json()
 
         telteAntall.firstOrNull { it["tekst"].asText() == "Ny!" }.shouldBeNull()
@@ -100,7 +102,7 @@ class AntallRouteTest {
         fillDb(5, "Oppgave!", varseltype = "oppgave")
         fillDb(7, "Innboks!", varseltype = "innboks")
 
-        val telteAntall = client.get("/antall/${Teksttype.WebTekst}?varselType=innboks")
+        val telteAntall = client.get("/api/antall/${Teksttype.WebTekst}?varselType=innboks")
             .json()
 
         telteAntall.sumOf { it["antall"].asInt() } shouldBe 7
@@ -111,7 +113,7 @@ class AntallRouteTest {
         fillDb(3, smsSendt = true, smsTekst = "En sms med egendefinert tekst!")
         fillDb(7, smsSendt = true, smsTekst = null)
 
-        val telteAntall = client.get("/antall/${Teksttype.SmsTekst}")
+        val telteAntall = client.get("/api/antall/${Teksttype.SmsTekst}")
             .json()
 
         telteAntall.sumOf { it["antall"].asInt() } shouldBe 3
@@ -122,7 +124,7 @@ class AntallRouteTest {
         fillDb(3, smsSendt = true, smsTekst = "En sms med egendefinert tekst!")
         fillDb(7, smsSendt = true, smsTekst = null)
 
-        val telteAntall = client.get("/antall/${Teksttype.SmsTekst}?standardtekster=true")
+        val telteAntall = client.get("/api/antall/${Teksttype.SmsTekst}?standardtekster=true")
             .json()
 
         telteAntall.sumOf { it["antall"].asInt() } shouldBe 10
@@ -136,7 +138,7 @@ class AntallRouteTest {
         fillDb(11, "Tekst 4", varseltype = "beskjed")
         fillDb(29, "Tekst 5", varseltype = "oppgave")
 
-        val telteAntall = client.get("/antall/${Teksttype.WebTekst}")
+        val telteAntall = client.get("/api/antall/${Teksttype.WebTekst}")
             .json()
 
         telteAntall.shouldBeSortedDescendingBy { it["antall"].asInt() }
@@ -182,6 +184,13 @@ class AntallRouteTest {
         application {
             varseltekstMonitor(
                 varseltekstRepository,
+                installAuthenticatorsFunction = {
+                    authentication {
+                        azureMock {
+                            setAsDefault = true
+                        }
+                    }
+                }
             )
         }
 

@@ -32,6 +32,7 @@ dependencies {
     implementation(Ktor.Server.contentNegotiation)
     implementation(Ktor.Server.htmlDsl)
     implementation(Ktor.Server.statusPages)
+    implementation(Ktor.Server.auth)
     implementation(Ktor.Serialization.jackson)
     implementation(KotlinLogging.logging)
     implementation(KotliQuery.kotliquery)
@@ -39,9 +40,10 @@ dependencies {
     implementation(JacksonDatatype.datatypeJsr310)
     implementation(JacksonDatatype.moduleKotlin)
     implementation(Postgresql.postgresql)
-    implementation(TmsKafkaTools.kafkaApplication)
     implementation(TmsCommonLib.utils)
     implementation(TmsCommonLib.metrics)
+    implementation(TmsKafkaTools.kafkaApplication)
+    implementation(TmsKtorTokenSupport.azureValidation)
 
     testImplementation(JunitPlatform.launcher)
     testImplementation(JunitJupiter.api)
@@ -51,6 +53,7 @@ dependencies {
     testImplementation(Kotest.runnerJunit5)
     testImplementation(Kotest.assertionsCore)
     testImplementation(Ktor.Test.serverTestHost)
+    testImplementation(TmsKtorTokenSupport.azureValidationMock)
 }
 
 application {
