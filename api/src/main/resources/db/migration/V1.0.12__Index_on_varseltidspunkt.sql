@@ -1,1 +1,1 @@
-create index varsel_varseltidspunkt on varsel(varseltidspunkt);
+create index concurrently varsel_varseltidspunkt on varsel(varseltidspunkt);
