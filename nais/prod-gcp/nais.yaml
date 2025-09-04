@@ -15,6 +15,8 @@ spec:
   prometheus:
     enabled: true
     path: /metrics
+  ingresses:
+    - "https://tms-varseltekst-monitor.ansatt.nav.no"
   azure:
     application:
       enabled: true
