@@ -58,9 +58,10 @@ class VarseltekstRepository(private val database: Database) {
                 from
                     varsel join ${teksttype.columnTableName} tt on ${teksttype.columnTableName} = tt.id
                 where
-                    ((:startDato)::timestamp is null or varsel.varseltidspunkt > :startDato) and
-                    ((:sluttDato)::timestamp is null or varsel.varseltidspunkt < :sluttDato) and
-                    ((:varseltype)::text is null or varsel.event_type = :varseltype)
+                    true
+                    ${ if (startDato != null) "and varsel.varseltidspunkt > :startDato " else "" }
+                    ${ if (sluttDato != null) "and varsel.varseltidspunkt < :sluttDato " else "" }
+                    ${ if (varseltype != null) "and varsel.event_type = :varseltype " else "" }
                 group by tt.tekst
                 order by antall desc
             """,
@@ -96,9 +97,10 @@ class VarseltekstRepository(private val database: Database) {
                 from
                     varsel join ${teksttype.columnTableName} tt on ${teksttype.columnTableName} = tt.id
                 where
-                    ((:startDato)::timestamp is null or varsel.varseltidspunkt > :startDato) and
-                    ((:sluttDato)::timestamp is null or varsel.varseltidspunkt < :sluttDato) and
-                    ((:varseltype)::text is null or varsel.event_type = :varseltype)
+                    true
+                    ${ if (startDato != null) "and varsel.varseltidspunkt > :startDato " else "" }
+                    ${ if (sluttDato != null) "and varsel.varseltidspunkt < :sluttDato " else "" }
+                    ${ if (varseltype != null) "and varsel.event_type = :varseltype " else "" }
                 group by tt.tekst, varseltype, namespace, appnavn
                 order by antall desc
             """,
@@ -136,10 +138,10 @@ class VarseltekstRepository(private val database: Database) {
                 from
                     varsel
                 where
-                    ${teksttype.preferenceColumn} and ${teksttype.columnTableName} is null and
-                    ((:startDato)::timestamp is null or varsel.varseltidspunkt > :startDato) and
-                    ((:sluttDato)::timestamp is null or varsel.varseltidspunkt < :sluttDato) and
-                    ((:varseltype)::text is null or varsel.event_type = :varseltype)
+                    ${teksttype.preferenceColumn} and ${teksttype.columnTableName} is null
+                    ${ if (startDato != null) "and varsel.varseltidspunkt > :startDato " else "" }
+                    ${ if (sluttDato != null) "and varsel.varseltidspunkt < :sluttDato " else "" }
+                    ${ if (varseltype != null) "and varsel.event_type = :varseltype " else "" }
                 order by antall desc
             """,
                 mapOf(
@@ -174,10 +176,10 @@ class VarseltekstRepository(private val database: Database) {
                 from
                     varsel
                 where
-                    ${teksttype.preferenceColumn} and ${teksttype.columnTableName} is null and
-                    ((:startDato)::timestamp is null or varsel.varseltidspunkt > :startDato) and
-                    ((:sluttDato)::timestamp is null or varsel.varseltidspunkt < :sluttDato) and
-                    ((:varseltype)::text is null or varsel.event_type = :varseltype)
+                    ${teksttype.preferenceColumn} and ${teksttype.columnTableName} is null
+                    ${ if (startDato != null) "and varsel.varseltidspunkt > :startDato " else "" }
+                    ${ if (sluttDato != null) "and varsel.varseltidspunkt < :sluttDato " else "" }
+                    ${ if (varseltype != null) "and varsel.event_type = :varseltype " else "" }
                 group by varseltype, namespace, appnavn
                 order by antall desc
             """,
