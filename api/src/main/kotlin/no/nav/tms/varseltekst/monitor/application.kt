@@ -58,12 +58,9 @@ fun main() {
             VarselOpprettetSubscriber(coalescingService, VarselRepository(database))
         )
 
-        onStartup {
+        onReady {
             Flyway.runFlywayMigrations(environment)
             coalescingService.initialize()
-        }
-
-        onReady {
             coalescingBacklogJob.start()
         }
     }.start()
