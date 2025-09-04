@@ -11,9 +11,11 @@ import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.routing
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.server.auth.*
 import io.ktor.server.http.content.*
 import io.ktor.server.plugins.statuspages.*
 import no.nav.tms.common.metrics.installTmsApiMetrics
+import no.nav.tms.token.support.azure.validation.azure
 import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstRepository
 import no.nav.tms.varseltekst.monitor.varseltekst.varseltekstRoutes
 import java.io.File
@@ -70,12 +72,9 @@ fun Application.varseltekstMonitor(
 }
 
 private fun installAuth(): Application.() -> Unit = {
-//    authentication {
-//        tokenX {
-//            setAsDefault = true
-//        }
-//        azure {
-//            setAsDefault = false
-//        }
-//    }
+    authentication {
+        azure {
+            setAsDefault = true
+        }
+    }
 }

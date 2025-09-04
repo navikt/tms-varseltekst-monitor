@@ -6,8 +6,10 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.server.auth.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.*
+import no.nav.tms.token.support.azure.validation.mock.azureMock
 import no.nav.tms.varseltekst.monitor.setup.LocalPostgresDatabase
 import no.nav.tms.varseltekst.monitor.setup.clearAllTables
 import no.nav.tms.varseltekst.monitor.varsel.Produsent
@@ -36,7 +38,7 @@ class TotaltAntallRouteTest {
         fillDb(10, "Hei!")
         fillDb(5, "Hallo!")
 
-        val telteAntall = client.get("/antall/${Teksttype.WebTekst}/totalt")
+        val telteAntall = client.get("/api/antall/${Teksttype.WebTekst}/totalt")
             .json()
 
 
@@ -53,7 +55,7 @@ class TotaltAntallRouteTest {
 
         val fiveDaysAgo = LocalDate.now().minusDays(5)
 
-        val telteAntall = client.get("/antall/${Teksttype.WebTekst}/totalt?startDato=$fiveDaysAgo")
+        val telteAntall = client.get("/api/antall/${Teksttype.WebTekst}/totalt?startDato=$fiveDaysAgo")
             .json()
 
         telteAntall.first { it["tekst"].asText() == "Ny!" }["antall"].asInt() shouldBe 7
@@ -69,7 +71,7 @@ class TotaltAntallRouteTest {
 
         val fiveDaysAgo = LocalDate.now().minusDays(5)
 
-        val telteAntall = client.get("/antall/${Teksttype.WebTekst}/totalt?sluttDato=$fiveDaysAgo")
+        val telteAntall = client.get("/api/antall/${Teksttype.WebTekst}/totalt?sluttDato=$fiveDaysAgo")
             .json()
 
         telteAntall.firstOrNull() { it["tekst"].asText() == "Ny!" }.shouldBeNull()
@@ -84,7 +86,7 @@ class TotaltAntallRouteTest {
         fillDb(5, "Oppgave!", varseltype = "oppgave")
         fillDb(7, "Innboks!", varseltype = "innboks")
 
-        val telteAntall = client.get("/antall/${Teksttype.WebTekst}/totalt?varselType=innboks")
+        val telteAntall = client.get("/api/antall/${Teksttype.WebTekst}/totalt?varselType=innboks")
             .json()
 
         telteAntall.sumOf { it["antall"].asInt() } shouldBe 7
@@ -95,7 +97,7 @@ class TotaltAntallRouteTest {
         fillDb(3, smsSendt = true, smsTekst = "En sms med egendefinert tekst!")
         fillDb(7, smsSendt = true, smsTekst = null)
 
-        val telteAntall = client.get("/antall/${Teksttype.SmsTekst}/totalt")
+        val telteAntall = client.get("/api/antall/${Teksttype.SmsTekst}/totalt")
             .json()
 
         telteAntall.sumOf { it["antall"].asInt() } shouldBe 3
@@ -106,7 +108,7 @@ class TotaltAntallRouteTest {
         fillDb(3, smsSendt = true, smsTekst = "En sms med egendefinert tekst!")
         fillDb(7, smsSendt = true, smsTekst = null)
 
-        val telteAntall = client.get("/antall/${Teksttype.SmsTekst}/totalt?standardtekster=true")
+        val telteAntall = client.get("/api/antall/${Teksttype.SmsTekst}/totalt?standardtekster=true")
             .json()
 
         telteAntall.sumOf { it["antall"].asInt() } shouldBe 10
@@ -120,7 +122,7 @@ class TotaltAntallRouteTest {
         fillDb(11, "Tekst 4")
         fillDb(29, "Tekst 5")
 
-        val telteAntall = client.get("/antall/${Teksttype.WebTekst}/totalt")
+        val telteAntall = client.get("/api/antall/${Teksttype.WebTekst}/totalt")
             .json()
 
         telteAntall.shouldBeSortedDescendingBy { it["antall"].asInt() }
@@ -166,6 +168,13 @@ class TotaltAntallRouteTest {
         application {
             varseltekstMonitor(
                 varseltekstRepository,
+                installAuthenticatorsFunction = {
+                    authentication {
+                        azureMock {
+                            setAsDefault = true
+                        }
+                    }
+                }
             )
         }
 
