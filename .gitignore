@@ -7,3 +7,18 @@ out
 
 .idea
 *.iml
+
+/web-app/dist/
+/out
+
+buildSrc/out
+*.ipr
+*.iws
+.DS_Store
+
+target/
+bash.exe.stackdump
+
+web-app/node_modules
+
+web-app/dist
