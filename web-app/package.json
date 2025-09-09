@@ -1,0 +1,71 @@
+{
+  "name": "tms-varseltekst-monitor",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "vite",
+    "build": "tsc && vite build",
+    "serve": "vite preview",
+    "lint": "tslint ./src/**/*.ts*",
+    "lint:fix": "tslint ./src/**/**/**/**/*.ts* --fix",
+    "test": "vitest run",
+    "prettier": "prettier --write \"src/**/*.{ts,tsx,less,css,js,jsx}\""
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "prettier --write",
+      "tslint --fix"
+    ]
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ],
+  "dependencies": {
+    "@navikt/ds-css": "^4.7.2",
+    "@navikt/ds-react": "^4.7.2",
+    "@navikt/ds-tokens": "^4.7.2",
+    "@navikt/fnrvalidator": "^1.1.3",
+    "axios": "^1.6.7",
+    "classnames": "^2.3.1",
+    "constate": "^3.1.0",
+    "dayjs": "^1.10.4",
+    "lodash.throttle": "^4.1.1",
+    "prop-types": "^15.7.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@microlink/react-json-view": "^1.23.0",
+    "react-toastify": "^7.0.3"
+  },
+  "devDependencies": {
+    "@types/classnames": "^2.2.11",
+    "@types/jest": "^26.0.14",
+    "@types/react": "^18.2.17",
+    "@types/react-dom": "^18.2.7",
+    "@types/react-modal": "^3.16.0",
+    "@vitejs/plugin-react": "^4.0.3",
+    "husky": "^4.3.5",
+    "lint-staged": "^10.5.3",
+    "msw": "^1.2.3",
+    "prettier": "^2.2.1",
+    "tslint": "^6.1.3",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-react": "^5.0.0",
+    "typescript": "^5.1.6",
+    "vite": "^4.5.3",
+    "vitest": "^0.33.0"
+  },
+  "msw": {
+    "workerDirectory": "public"
+  }
+}

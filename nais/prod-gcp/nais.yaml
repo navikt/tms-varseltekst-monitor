@@ -15,6 +15,21 @@ spec:
   prometheus:
     enabled: true
     path: /metrics
+  ingresses:
+    - "https://tms-varseltekst-monitor.ansatt.nav.no"
+  azure:
+    application:
+      enabled: true
+      allowAllUsers: false
+      claims:
+        groups:
+          - id: '77cce29b-3cb8-45f7-8014-a551fb93f8a6'
+      tenant: nav.no
+    sidecar:
+      enabled: true
+      autoLogin: true
+      autoLoginIgnorePaths:
+        - /metrics
   secureLogs:
     enabled: true
   replicas:
