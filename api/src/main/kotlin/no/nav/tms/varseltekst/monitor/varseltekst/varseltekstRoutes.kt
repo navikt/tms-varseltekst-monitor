@@ -2,102 +2,110 @@ package no.nav.tms.varseltekst.monitor.varseltekst
 
 import com.fasterxml.jackson.annotation.JsonAlias
 import io.ktor.http.*
-import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.*
 import org.apache.poi.ss.usermodel.Workbook
 import java.time.LocalDate
-import java.util.MissingResourceException
 import java.util.UUID
 import kotlin.math.max
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
-fun Route.varseltekstRoutes(varseltekstRepository: VarseltekstRepository) {
-    get("/api/antall/{teksttype}/totalt") {
-
-        varseltekstRepository.tellAntallVarselteksterTotalt(
-            teksttype = call.teksttype(),
-            varseltype = call.varseltype(),
-            startDato = call.startDato(),
-            sluttDato = call.sluttDato(),
-            inkluderStandardtekster = call.inkluderStandardtekster()
-        ).let {
-            call.respond(it)
-        }
-    }
-
-    get("/api/antall/{teksttype}") {
-
-        varseltekstRepository.tellAntallVarseltekster(
-            teksttype = call.teksttype(),
-            varseltype = call.varseltype(),
-            startDato = call.startDato(),
-            sluttDato = call.sluttDato(),
-            inkluderStandardtekster = call.inkluderStandardtekster()
-        ).let {
-            call.respond(it)
-        }
-    }
+fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
 
     val fileStore = mutableMapOf<String, ExcelFile>()
+
+    val waitingScope = CoroutineScope(Dispatchers.Default + Job())
 
     post("/api/download") {
 
         val request: DownloadRequest = call.receive()
 
-        val workbook = if (request.detaljert) {
-            varseltekstRepository.tellAntallVarseltekster(
-                teksttype = request.teksttype,
-                varseltype = request.varseltype,
-                startDato = request.startDato,
-                sluttDato = request.sluttDato,
-                inkluderStandardtekster = request.inkluderStandardtekster
-            ).let {
-                ExcelFileWriter.antallToExcelSheet(it, request.teksttype, request.minimumAntall)
-            }
-        } else {
-            varseltekstRepository.tellAntallVarselteksterTotalt(
-                teksttype = request.teksttype,
-                varseltype = request.varseltype,
-                startDato = request.startDato,
-                sluttDato = request.sluttDato,
-                inkluderStandardtekster = request.inkluderStandardtekster
-            ).let {
-                ExcelFileWriter.totaltAntallToExcelSheet(it, request.teksttype, request.minimumAntall)
-            }
-        }
+        val queryJob = queryHandler.startQuery(request)
 
         val fileId = UUID.randomUUID().toString()
         val filename = filename(request)
 
-        fileStore[fileId] = ExcelFile(filename, workbook)
+        if (request.deferDownloadAfterSeconds == null) {
 
-        call.response.header(HttpHeaders.Location, "/api/download/$fileId")
-        call.respond(HttpStatusCode.Accepted)
+            fileStore[fileId] = ExcelFile.ready(filename, queryJob.await())
+
+            call.response.header(HttpHeaders.Location, "/api/download/$fileId")
+            call.respond(HttpStatusCode.Accepted)
+        } else {
+
+            val deferAfter = request.deferDownloadAfterSeconds.seconds
+            val start = TimeSource.Monotonic.markNow()
+
+            while (!queryJob.isCompleted && start.elapsedNow() < deferAfter) {
+                delay(100)
+            }
+
+            if (queryJob.isCompleted) {
+
+                fileStore[fileId] = ExcelFile.ready(filename, queryJob.await())
+
+                call.response.header(HttpHeaders.Location, "/api/download/$fileId")
+                call.respond(HttpStatusCode.Accepted)
+            } else {
+
+                fileStore[fileId] = ExcelFile.waiting(filename)
+
+                call.response.header(HttpHeaders.Location, "/venterom/$fileId")
+                call.respond(HttpStatusCode.Found)
+
+                waitingScope.launch {
+                    fileStore[fileId]!!.workbook = queryJob.await()
+                }
+            }
+        }
     }
 
     get("/api/download/{fileId}") {
         val fileId = call.fileId()
 
-        val excelFile = fileStore.remove(fileId) ?: throw FileNotFoundException(fileId)
+        val excelFile = fileStore[fileId] ?: throw FileNotFoundException(fileId)
 
-        call.response.header(
-            HttpHeaders.ContentDisposition,
-            ContentDisposition.Attachment.withParameter(
-                ContentDisposition.Parameters.FileName,
-                excelFile.filename
-            ).toString()
-        )
-        call.respondOutputStream {
-            excelFile.workbook.write(this)
+        if (!excelFile.isReady) {
+            call.respond(HttpStatusCode.Processing)
+        } else {
+            fileStore.remove(fileId)
+
+            call.response.header(
+                HttpHeaders.ContentDisposition,
+                ContentDisposition.Attachment.withParameter(
+                    ContentDisposition.Parameters.FileName,
+                    excelFile.filename
+                ).toString()
+            )
+            call.respondOutputStream {
+                excelFile.workbook!!.write(this)
+            }
         }
     }
 }
 
 private data class ExcelFile(
     val filename: String,
-    val workbook: Workbook
-)
+    var workbook: Workbook?,
+) {
+    val isReady: Boolean get() = workbook != null
+
+    companion object {
+        fun ready(filename: String, workbook: Workbook) = ExcelFile(
+            filename = filename,
+            workbook = workbook,
+        )
+
+        fun waiting(filename: String) = ExcelFile(
+            filename = filename,
+            workbook = null,
+        )
+    }
+}
 
 private fun filename(request: DownloadRequest): String {
     return when {
@@ -114,26 +122,11 @@ data class DownloadRequest(
     val sluttDato: LocalDate? = null,
     val inkluderStandardtekster: Boolean = false,
     @JsonAlias("minimumAntall") private val _minimumAntall: Int = 100,
-    val filnavn: String? = null
+    val filnavn: String? = null,
+    val deferDownloadAfterSeconds: Long? = 5
 ) {
     val minimumAntall = max(100, _minimumAntall)
 }
-
-private fun RoutingCall.teksttype() = request.pathVariables["teksttype"]
-    ?.let { Teksttype.parse(it) }
-    ?: throw IllegalArgumentException("Ugyldig teksttype")
-
-
-private fun RoutingCall.varseltype() = request.queryParameters["varseltype"]
-
-private fun RoutingCall.startDato() = request.queryParameters["startDato"]
-    ?.let(LocalDate::parse)
-
-private fun RoutingCall.sluttDato() = request.queryParameters["sluttDato"]
-    ?.let(LocalDate::parse)
-
-private fun RoutingCall.inkluderStandardtekster() = request.queryParameters["standardtekster"]
-    ?.toBoolean() ?: false
 
 private fun RoutingCall.fileId() = request.pathVariables["fileId"]
     ?: throw IllegalArgumentException("Mangler fileId")
