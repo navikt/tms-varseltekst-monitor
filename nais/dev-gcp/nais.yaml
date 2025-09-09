@@ -45,6 +45,18 @@ spec:
           day: 1
           hour: 4
         cascadingDelete: false
+  ingresses:
+    - "https://tms-varseltekst-monitor.ansatt.dev.nav.no"
+  azure:
+    application:
+      enabled: true
+      tenant: nav.no
+      claims:
+        groups:
+          - id: "cbe637e2-317f-48e1-a951-ce52fcea3fae"
+    sidecar:
+      enabled: true
+      autoLogin: true
   kafka:
     pool: nav-dev
   env:
