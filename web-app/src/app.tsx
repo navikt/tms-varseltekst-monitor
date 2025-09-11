@@ -10,18 +10,24 @@ import Venterom from "./venterom";
 function App() {
 	return (
 		<BrowserRouter>
-			<div className="app tms-varseltekst-monitor">
-				<Header/>
-				<main>
-					<Varseltekster/>
-				</main>
-				<ToastContainer/>
-			</div>
 			<Routes>
+				<Route path="/" element={<Index />}></Route>
 				<Route path="/venterom/:fileId" element={<Venterom />}></Route>
 			</Routes>
 		</BrowserRouter>
 	);
+}
+
+function Index() {
+	return (
+		<div className="app tms-varseltekst-monitor">
+			<Header/>
+			<main>
+				<Varseltekster/>
+			</main>
+			<ToastContainer/>
+		</div>
+	)
 }
 
 export default App;
