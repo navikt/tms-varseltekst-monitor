@@ -28,7 +28,7 @@ export function requestDownload(request: DownloadRequest): Promise<Response> {
 			inkluderStandardtekster: request.inkluderStandardtekster,
 			minimumAntall: request.minimumAntall,
 			filnavn: request.filnavn,
-			deferDownloadAfterSeconds: request.ventetid
+			deferDownloadAfterMs: request.ventetid
 		}),
 		headers: {
 			'Content-type': 'application/json; charset=UTF-8'
