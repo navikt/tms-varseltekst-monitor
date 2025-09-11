@@ -2,7 +2,8 @@ package no.nav.tms.varseltekst.monitor.varseltekst
 
 import no.nav.tms.varseltekst.monitor.varseltekst.VarselTekster.DetaljertAntall
 import no.nav.tms.varseltekst.monitor.varseltekst.VarselTekster.TotaltAntall
-import org.apache.poi.ss.usermodel.*
+import org.apache.poi.ss.usermodel.CellType
+import org.apache.poi.ss.usermodel.Workbook
 import org.apache.poi.xssf.usermodel.XSSFSheet
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 

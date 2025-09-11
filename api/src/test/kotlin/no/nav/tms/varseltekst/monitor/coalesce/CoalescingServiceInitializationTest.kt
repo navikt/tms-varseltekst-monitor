@@ -3,7 +3,10 @@ package no.nav.tms.varseltekst.monitor.coalesce
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import no.nav.tms.varseltekst.monitor.coalesce.rules.*
-import no.nav.tms.varseltekst.monitor.setup.*
+import no.nav.tms.varseltekst.monitor.setup.LocalPostgresDatabase
+import no.nav.tms.varseltekst.monitor.setup.deleteCoalescingBackLog
+import no.nav.tms.varseltekst.monitor.setup.deleteCoalescingRule
+import no.nav.tms.varseltekst.monitor.setup.deleteTekst
 import no.nav.tms.varseltekst.monitor.varsel.insertTekst
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test

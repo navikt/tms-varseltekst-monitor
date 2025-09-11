@@ -20,9 +20,6 @@ import {
 	DownloadRequest, requestDownload,
 } from '../../api';
 import './kafka-admin.css';
-import { toTimerStr } from '../../utils/date-utils';
-import {response} from "msw";
-import {number} from "prop-types";
 
 export function Varseltekster() {
 
@@ -92,8 +89,15 @@ function ReadFromTopicCard() {
 		};
 
 		requestDownload(request)
-			.then(response => response.headers.get('Location')!!)
-			.then(fileLink => window.open(fileLink, '_self'))
+			.then(response => {
+				if (response.status == 202) {
+					const fileLocation = response.headers.get('Location')!!
+					window.open(fileLocation, '_self')
+				} else if (response.status == 302) {
+					const waitingRoom = response.headers.get('Location')!!
+					window.open(waitingRoom, '_blank')
+				}
+			})
 			.catch(() => errorToast('Klarte ikke laste ned varseltekster'))
 			.finally(() => {
 				setIsLoading(false);

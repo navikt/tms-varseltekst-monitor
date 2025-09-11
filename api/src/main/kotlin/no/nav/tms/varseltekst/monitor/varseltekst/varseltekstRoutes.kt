@@ -8,9 +8,8 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.*
 import org.apache.poi.ss.usermodel.Workbook
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 import kotlin.math.max
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 
@@ -61,6 +60,16 @@ fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
                     fileStore[fileId]!!.workbook = queryJob.await()
                 }
             }
+        }
+    }
+
+    head("/api/download/{fileId}") {
+        val excelFile = fileStore[call.fileId()]
+
+        when (excelFile?.isReady) {
+            null -> call.respond(HttpStatusCode.NotFound)
+            false -> call.respond(HttpStatusCode.Processing)
+            true -> call.respond(HttpStatusCode.OK)
         }
     }
 
