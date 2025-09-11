@@ -17,9 +17,10 @@ import {
     Switch
 } from '@navikt/ds-react';
 import {
-	DownloadRequest, requestDownload,
+	DownloadRequest, sendVarselQuery,
 } from '../../api';
 import './kafka-admin.css';
+import {f} from "msw/lib/glossary-de6278a9";
 
 export function Varseltekster() {
 
@@ -47,6 +48,8 @@ enum Varseltype {
 }
 
 
+const MAX_INTERVAL_MS: number = 5000
+
 function ReadFromTopicCard() {
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [teksttypeField, setTeksttypeField] = useState<Teksttype>(Teksttype.WEB_TEKST);
@@ -57,7 +60,6 @@ function ReadFromTopicCard() {
 	const [minAntallField, setMinAntallField] = useState<string>('');
 	const [filenameField, setFilenameField] = useState<string>('');
 	const [standardteksterField, setStandardteksterField] = useState<boolean>(false);
-	const [ventetidField, setVentetidField] = useState<string>('');
 
 	const fromDatePicker = useDatepicker({
 		onDateChange: (date) => setFromDateField(date || null),
@@ -67,7 +69,23 @@ function ReadFromTopicCard() {
 		onDateChange: (date) => setToDateField(date || null),
 	})
 
-	async function handleDownload() {
+	function awaitFile(fileLocation: string, nextInterval: number = 250) {
+		setTimeout(() => {
+			fetch(fileLocation, { method: 'HEAD'})
+				.then(response => {
+					if (response.status == 102) {
+						awaitFile(fileLocation, Math.min(nextInterval * 2, MAX_INTERVAL_MS))
+					} else if (response.status == 200) {
+						window.open(fileLocation, '_self')
+						setIsLoading(false)
+					} else {
+						setIsLoading(false)
+					}
+				})
+		})
+	}
+
+	async function handleDownloadQuery() {
 		setIsLoading(true);
 
 		let varseltype: string | null;
@@ -86,24 +104,22 @@ function ReadFromTopicCard() {
 			sluttDato: toDateField?.toISOString() || null,
 			inkluderStandardtekster: standardteksterField,
 			minimumAntall: parseInt(minAntallField, 10),
-			filnavn: filenameField || null,
-			ventetid: ventetidField ? parseInt(ventetidField, 10) : null
+			filnavn: filenameField || null
 		};
 
-		requestDownload(request)
+		sendVarselQuery(request)
 			.then(response => {
 				if (response.status == 202) {
 					const fileLocation = response.headers.get('Location')!!
-					window.open(fileLocation, '_self')
-				} else if (response.status == 302) {
-					const waitingRoom = response.headers.get('Location')!!
-					window.open(waitingRoom, '_blank')
+					awaitFile(fileLocation)
+				} else {
+					setIsLoading(false)
 				}
 			})
-			.catch(() => errorToast('Klarte ikke laste ned varseltekster'))
-			.finally(() => {
-				setIsLoading(false);
-			});
+			.catch(() => {
+				errorToast('Klarte ikke laste ned varseltekster')
+				setIsLoading(false)
+			})
 	}
 
 	// @ts-ignore
@@ -174,15 +190,8 @@ function ReadFromTopicCard() {
 				onChange={e => setFilenameField(e.target.value)}
 			/>
 
-			<TextField
-				label="Ventetid (sekunder)"
-				value={ventetidField}
-				inputMode="numeric"
-				onChange={e => setVentetidField(e.target.value)}
-			/>
-
 			{!isLoading ? (
-				<Button id="fetch" onClick={handleDownload} variant="tertiary">
+				<Button id="fetch" onClick={handleDownloadQuery} variant="tertiary">
 					Last ned
 				</Button>
 			) : null}
