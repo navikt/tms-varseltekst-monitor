@@ -1,6 +1,5 @@
 package no.nav.tms.varseltekst.monitor.varsel
 
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.treeToValue
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.tms.kafka.application.JsonMessage

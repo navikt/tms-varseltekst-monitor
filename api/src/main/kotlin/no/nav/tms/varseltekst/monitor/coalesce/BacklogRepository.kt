@@ -1,10 +1,12 @@
 package no.nav.tms.varseltekst.monitor.coalesce
 
-import kotliquery.*
-import no.nav.tms.varseltekst.monitor.coalesce.rules.*
+import kotliquery.Row
+import kotliquery.TransactionalSession
+import kotliquery.queryOf
+import no.nav.tms.varseltekst.monitor.coalesce.rules.CoalescingRule
 import no.nav.tms.varseltekst.monitor.setup.Database
-import no.nav.tms.varseltekst.monitor.util.updateInTx
 import no.nav.tms.varseltekst.monitor.util.LocalDateTimeHelper.nowAtUtc
+import no.nav.tms.varseltekst.monitor.util.updateInTx
 
 
 class BacklogRepository(private val database: Database) {

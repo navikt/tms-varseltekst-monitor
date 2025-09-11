@@ -1,12 +1,14 @@
 package no.nav.tms.varseltekst.monitor.coalesce
 
-import kotliquery.*
-import no.nav.tms.varseltekst.monitor.coalesce.rules.*
+import kotliquery.Row
+import kotliquery.TransactionalSession
+import kotliquery.queryOf
+import no.nav.tms.varseltekst.monitor.coalesce.rules.RuleDto
 import no.nav.tms.varseltekst.monitor.setup.Database
+import no.nav.tms.varseltekst.monitor.util.LocalDateTimeHelper.nowAtUtc
 import no.nav.tms.varseltekst.monitor.util.singleInTx
 import no.nav.tms.varseltekst.monitor.util.singleOrNullInTx
 import no.nav.tms.varseltekst.monitor.util.updateInTx
-import no.nav.tms.varseltekst.monitor.util.LocalDateTimeHelper.nowAtUtc
 
 class CoalescingRepository(val database: Database) {
     fun getCoalescingRules(): List<RuleDto> = database.list {
