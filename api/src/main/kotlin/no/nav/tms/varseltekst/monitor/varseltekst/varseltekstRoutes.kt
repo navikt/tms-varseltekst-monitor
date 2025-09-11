@@ -46,7 +46,6 @@ fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
             call.respond(HttpStatusCode.Accepted)
         } else {
 
-
             val deferAfter = request.deferDownloadAfterMs.milliseconds
             val start = TimeSource.Monotonic.markNow()
 
