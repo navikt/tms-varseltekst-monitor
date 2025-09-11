@@ -1,6 +1,7 @@
 package no.nav.tms.varseltekst.monitor.varseltekst
 
 import com.fasterxml.jackson.annotation.JsonAlias
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -10,10 +11,13 @@ import org.apache.poi.ss.usermodel.Workbook
 import java.time.LocalDate
 import java.util.*
 import kotlin.math.max
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 
 fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
+
+    val log = KotlinLogging.logger { }
 
     val fileStore = mutableMapOf<String, ExcelFile>()
 
@@ -23,33 +27,48 @@ fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
 
         val request: DownloadRequest = call.receive()
 
+        log.info { "Starting query" }
+
         val queryJob = queryHandler.startQuery(request)
 
         val fileId = UUID.randomUUID().toString()
         val filename = filename(request)
 
-        if (request.deferDownloadAfterSeconds == null) {
+        if (request.deferDownloadAfterMs == null) {
+
+            log.info { "Waiting for query indefinitely" }
 
             fileStore[fileId] = ExcelFile.ready(filename, queryJob.await())
+
+            log.info { "Query done" }
 
             call.response.header(HttpHeaders.Location, "/api/download/$fileId")
             call.respond(HttpStatusCode.Accepted)
         } else {
 
-            val deferAfter = request.deferDownloadAfterSeconds.seconds
+
+            val deferAfter = request.deferDownloadAfterMs.milliseconds
             val start = TimeSource.Monotonic.markNow()
+
+            log.info { "Waiting for query up to $deferAfter" }
 
             while (!queryJob.isCompleted && start.elapsedNow() < deferAfter) {
                 delay(100)
             }
 
+            log.info { "Stopped waiting after ${start.elapsedNow()}" }
+
             if (queryJob.isCompleted) {
+
+                log.info { "Query complete, serving file" }
 
                 fileStore[fileId] = ExcelFile.ready(filename, queryJob.await())
 
                 call.response.header(HttpHeaders.Location, "/api/download/$fileId")
                 call.respond(HttpStatusCode.Accepted)
             } else {
+
+                log.info { "Query incomplete, redirecting to waiting room" }
 
                 fileStore[fileId] = ExcelFile.waiting(filename)
 
@@ -132,7 +151,7 @@ data class DownloadRequest(
     val inkluderStandardtekster: Boolean = false,
     @JsonAlias("minimumAntall") private val _minimumAntall: Int = 100,
     val filnavn: String? = null,
-    val deferDownloadAfterSeconds: Long? = 5
+    val deferDownloadAfterMs: Long? = 5000
 ) {
     val minimumAntall = max(100, _minimumAntall)
 }
