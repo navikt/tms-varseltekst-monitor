@@ -57,6 +57,7 @@ function ReadFromTopicCard() {
 	const [minAntallField, setMinAntallField] = useState<string>('');
 	const [filenameField, setFilenameField] = useState<string>('');
 	const [standardteksterField, setStandardteksterField] = useState<boolean>(false);
+	const [ventetidField, setVentetidField] = useState<string>('');
 
 	const fromDatePicker = useDatepicker({
 		onDateChange: (date) => setFromDateField(date || null),
@@ -86,6 +87,7 @@ function ReadFromTopicCard() {
 			inkluderStandardtekster: standardteksterField,
 			minimumAntall: parseInt(minAntallField, 10),
 			filnavn: filenameField || null,
+			ventetid: ventetidField ? parseInt(ventetidField, 10) : null
 		};
 
 		requestDownload(request)
@@ -170,6 +172,13 @@ function ReadFromTopicCard() {
 				label="Filnavn (.xlsx)"
 				value={filenameField}
 				onChange={e => setFilenameField(e.target.value)}
+			/>
+
+			<TextField
+				label="Ventetid (sekunder)"
+				value={ventetidField}
+				inputMode="numeric"
+				onChange={e => setVentetidField(e.target.value)}
 			/>
 
 			{!isLoading ? (

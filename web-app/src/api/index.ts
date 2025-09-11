@@ -12,7 +12,8 @@ export interface DownloadRequest {
 	sluttDato: string | null,
 	inkluderStandardtekster: boolean,
 	minimumAntall: number,
-	filnavn: string | null
+	filnavn: string | null,
+	ventetid: number | null
 }
 
 export function requestDownload(request: DownloadRequest): Promise<Response> {
@@ -26,7 +27,8 @@ export function requestDownload(request: DownloadRequest): Promise<Response> {
 			sluttDato: request.sluttDato,
 			inkluderStandardtekster: request.inkluderStandardtekster,
 			minimumAntall: request.minimumAntall,
-			filnavn: request.filnavn
+			filnavn: request.filnavn,
+			deferDownloadAfterSeconds: request.ventetid
 		}),
 		headers: {
 			'Content-type': 'application/json; charset=UTF-8'
