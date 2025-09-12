@@ -6,16 +6,11 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.websocket.*
-import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import org.apache.poi.ss.usermodel.Workbook
 import java.time.LocalDate
 import java.util.*
 import kotlin.math.max
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.TimeSource
 
 fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
 
