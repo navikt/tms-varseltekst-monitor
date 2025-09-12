@@ -18,7 +18,7 @@ fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
 
     val fileStore = mutableMapOf<String, ExcelFile>()
 
-    val waitingScope = CoroutineScope(Dispatchers.Default + Job())
+    val queryScope = CoroutineScope(Dispatchers.Default + Job())
 
     post("/api/download") {
 
@@ -38,18 +38,18 @@ fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
         call.response.header(HttpHeaders.Location, "/api/download/$fileId")
         call.respond(HttpStatusCode.Accepted)
 
-        waitingScope.launch {
+        queryScope.launch {
             fileStore[fileId]!!.workbook = queryJob.await()
         }
     }
 
-    head("/api/download/{fileId}") {
+    get("/api/download/{fileId}/status") {
         val excelFile = fileStore[call.fileId()]
 
         when (excelFile?.isReady) {
-            null -> call.respond(HttpStatusCode.NotFound)
-            false -> call.respond(HttpStatusCode.Processing)
-            true -> call.respond(HttpStatusCode.OK)
+            null -> call.respond(StatusResponse.NotAvailable.name)
+            false -> call.respond(StatusResponse.Pending.name)
+            true -> call.respond(StatusResponse.Complete.name)
         }
     }
 
@@ -76,6 +76,11 @@ fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
         }
     }
 }
+
+enum class StatusResponse{
+    Pending, Complete, NotAvailable;
+}
+
 
 private data class ExcelFile(
     val filename: String,
