@@ -43,7 +43,7 @@ fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
         }
     }
 
-    head("/api/download/{fileId}") {
+    get("/api/download/{fileId}/status") {
         val excelFile = fileStore[call.fileId()]
 
         when (excelFile?.isReady) {

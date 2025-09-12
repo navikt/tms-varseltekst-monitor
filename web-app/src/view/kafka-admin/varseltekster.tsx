@@ -71,7 +71,7 @@ function ReadFromTopicCard() {
 
 	function awaitFile(fileLocation: string, nextInterval: number = 250) {
 		setTimeout(() => {
-			fetch(fileLocation, { method: 'HEAD'})
+			fetch(`${fileLocation}/status`)
 				.then(response => {
 					if (response.status == 102) {
 						awaitFile(fileLocation, Math.min(nextInterval * 2, MAX_INTERVAL_MS))
