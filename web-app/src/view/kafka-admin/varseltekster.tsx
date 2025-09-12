@@ -21,6 +21,7 @@ import {
 } from '../../api';
 import './kafka-admin.css';
 import {f} from "msw/lib/glossary-de6278a9";
+import {response} from "msw";
 
 export function Varseltekster() {
 
@@ -72,10 +73,11 @@ function ReadFromTopicCard() {
 	function awaitFile(fileLocation: string, nextInterval: number = 250) {
 		setTimeout(() => {
 			fetch(`${fileLocation}/status`)
-				.then(response => {
-					if (response.status == 102) {
+				.then(response => response.text())
+				.then(status => {
+					if (status == "Pending") {
 						awaitFile(fileLocation, Math.min(nextInterval * 2, MAX_INTERVAL_MS))
-					} else if (response.status == 200) {
+					} else if (status == "Complete") {
 						window.open(fileLocation, '_self')
 						setIsLoading(false)
 					} else {

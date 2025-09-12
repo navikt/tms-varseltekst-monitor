@@ -47,9 +47,9 @@ fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
         val excelFile = fileStore[call.fileId()]
 
         when (excelFile?.isReady) {
-            null -> call.respond(HttpStatusCode.NotFound)
-            false -> call.respond(HttpStatusCode.Processing)
-            true -> call.respond(HttpStatusCode.OK)
+            null -> call.respond(StatusResponse.NotAvailable.name)
+            false -> call.respond(StatusResponse.Pending.name)
+            true -> call.respond(StatusResponse.Complete.name)
         }
     }
 
@@ -76,6 +76,11 @@ fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
         }
     }
 }
+
+enum class StatusResponse{
+    Pending, Complete, NotAvailable;
+}
+
 
 private data class ExcelFile(
     val filename: String,
