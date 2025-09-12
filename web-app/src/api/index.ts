@@ -12,11 +12,10 @@ export interface DownloadRequest {
 	sluttDato: string | null,
 	inkluderStandardtekster: boolean,
 	minimumAntall: number,
-	filnavn: string | null,
-	ventetid: number | null
+	filnavn: string | null
 }
 
-export function requestDownload(request: DownloadRequest): Promise<Response> {
+export function sendVarselQuery(request: DownloadRequest): Promise<Response> {
 	return fetch(`/api/download`, {
 		method: 'POST',
 		body: JSON.stringify({
@@ -27,8 +26,7 @@ export function requestDownload(request: DownloadRequest): Promise<Response> {
 			sluttDato: request.sluttDato,
 			inkluderStandardtekster: request.inkluderStandardtekster,
 			minimumAntall: request.minimumAntall,
-			filnavn: request.filnavn,
-			deferDownloadAfterMs: request.ventetid
+			filnavn: request.filnavn
 		}),
 		headers: {
 			'Content-type': 'application/json; charset=UTF-8'

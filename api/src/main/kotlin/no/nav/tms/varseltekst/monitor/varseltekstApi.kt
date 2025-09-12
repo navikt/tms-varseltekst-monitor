@@ -12,6 +12,7 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.websocket.*
 import no.nav.tms.common.metrics.installTmsApiMetrics
 import no.nav.tms.token.support.azure.validation.azure
 import no.nav.tms.varseltekst.monitor.varseltekst.FileNotFoundException
@@ -19,6 +20,7 @@ import no.nav.tms.varseltekst.monitor.varseltekst.VarselDownloadQueryHandler
 import no.nav.tms.varseltekst.monitor.varseltekst.varseltekstRoutes
 import java.io.File
 import java.text.DateFormat
+import kotlin.time.Duration.Companion.seconds
 
 fun Application.varseltekstMonitor(
     queryHandler: VarselDownloadQueryHandler,
@@ -31,6 +33,13 @@ fun Application.varseltekstMonitor(
 
     installTmsApiMetrics {
         setupMetricsRoute = false
+    }
+
+    install(WebSockets) {
+        pingPeriod = 15.seconds
+        timeout = 15.seconds
+        maxFrameSize = Long.MAX_VALUE
+        masking = false
     }
 
     install(ContentNegotiation) {
