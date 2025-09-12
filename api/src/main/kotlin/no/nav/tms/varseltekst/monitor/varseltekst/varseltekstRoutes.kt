@@ -18,7 +18,7 @@ fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
 
     val fileStore = mutableMapOf<String, ExcelFile>()
 
-    val waitingScope = CoroutineScope(Dispatchers.Default + Job())
+    val queryScope = CoroutineScope(Dispatchers.Default + Job())
 
     post("/api/download") {
 
@@ -38,7 +38,7 @@ fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
         call.response.header(HttpHeaders.Location, "/api/download/$fileId")
         call.respond(HttpStatusCode.Accepted)
 
-        waitingScope.launch {
+        queryScope.launch {
             fileStore[fileId]!!.workbook = queryJob.await()
         }
     }

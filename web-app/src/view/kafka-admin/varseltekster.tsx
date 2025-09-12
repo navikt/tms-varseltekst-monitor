@@ -82,7 +82,7 @@ function ReadFromTopicCard() {
 						setIsLoading(false)
 					}
 				})
-		})
+		}, nextInterval)
 	}
 
 	async function handleDownloadQuery() {
