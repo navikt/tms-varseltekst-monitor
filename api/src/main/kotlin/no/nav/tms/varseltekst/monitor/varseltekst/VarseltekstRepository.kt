@@ -14,14 +14,36 @@ class VarseltekstRepository(private val database: Database) {
         inkluderStandardtekster: Boolean
     ): List<VarselTekster.TotaltAntall> {
 
-        val egendefinerteTekster = tellEgendefinerteTeksterTotalt(teksttype, varseltype, startDato, sluttDato)
+        val queryHelper = DynamicQueryHelper(listOf(teksttype), inkluderStandardtekster)
 
-        return if (inkluderStandardtekster && teksttype != Teksttype.WebTekst) {
-            egendefinerteTekster + tellStandandardteksterTotalt(teksttype, varseltype, startDato, sluttDato)
-        } else {
-            egendefinerteTekster
-        }.sortedByDescending {
-            it.antall
+        return database.list {
+            queryOf(
+                """
+                select
+                    count(*) as antall,
+                    ${ queryHelper.columns }
+                from
+                    varsel ${ queryHelper.join }
+                where
+                    ${ queryHelper.where }
+                    ${ if (startDato != null) "and varsel.varseltidspunkt > :startDato " else "" }
+                    ${ if (sluttDato != null) "and varsel.varseltidspunkt < :sluttDato " else "" }
+                    ${ if (varseltype != null) "and varsel.event_type = :varseltype " else "" }
+                group by ${ queryHelper.columns }
+                order by antall desc
+            """,
+                mapOf(
+                    "startDato" to startDato,
+                    "sluttDato" to sluttDato,
+                    "varseltype" to varseltype
+                )
+            )
+                .map {
+                    VarselTekster.TotaltAntall(
+                        antall = it.int("antall"),
+                        tekst = it.stringOrNull("tekst")
+                    )
+                }.asList
         }
     }
 
@@ -33,75 +55,24 @@ class VarseltekstRepository(private val database: Database) {
         inkluderStandardtekster: Boolean
     ): List<VarselTekster.DetaljertAntall> {
 
-        val egendefinerteTekster = tellEgendefinerteTekster(teksttype, varseltype, startDato, sluttDato)
+        val queryHelper = DynamicQueryHelper(listOf(teksttype), inkluderStandardtekster)
 
-        return if (inkluderStandardtekster && teksttype != Teksttype.WebTekst) {
-            egendefinerteTekster + tellStandandardtekster(teksttype, varseltype, startDato, sluttDato)
-        } else {
-            egendefinerteTekster
-        }.sortedByDescending {
-            it.antall
-        }
-    }
-
-    private fun tellEgendefinerteTeksterTotalt(
-        teksttype: Teksttype,
-        varseltype: String?,
-        startDato: LocalDate?,
-        sluttDato: LocalDate?
-    ): List<VarselTekster.TotaltAntall> {
         return database.list {
             queryOf("""
                 select
                     count(*) as antall,
-                    tt.tekst
-                from
-                    varsel join ${teksttype.columnTableName} tt on ${teksttype.columnTableName} = tt.id
-                where
-                    true
-                    ${ if (startDato != null) "and varsel.varseltidspunkt > :startDato " else "" }
-                    ${ if (sluttDato != null) "and varsel.varseltidspunkt < :sluttDato " else "" }
-                    ${ if (varseltype != null) "and varsel.event_type = :varseltype " else "" }
-                group by tt.tekst
-                order by antall desc
-            """,
-                mapOf(
-                    "startDato" to startDato,
-                    "sluttDato" to sluttDato,
-                    "varseltype" to varseltype
-                )
-            )
-                .map {
-                    VarselTekster.TotaltAntall(
-                        antall = it.int("antall"),
-                        tekst = it.string("tekst")
-                    )
-                }.asList
-        }
-    }
-
-    private fun tellEgendefinerteTekster(
-        teksttype: Teksttype,
-        varseltype: String?,
-        startDato: LocalDate?,
-        sluttDato: LocalDate?
-    ): List<VarselTekster.DetaljertAntall> {
-        return database.list {
-            queryOf("""
-                select
-                    count(*) as antall,
-                    tt.tekst,
                     varsel.event_type as varseltype,
                     varsel.produsent_namespace as namespace,
-                    varsel.produsent_appnavn as appnavn
+                    varsel.produsent_appnavn as appnavn,
+                    ${queryHelper.columns}
                 from
-                    varsel join ${teksttype.columnTableName} tt on ${teksttype.columnTableName} = tt.id
+                    varsel ${ queryHelper.join }
                 where
-                    true
+                    ${ queryHelper.where }
                     ${ if (startDato != null) "and varsel.varseltidspunkt > :startDato " else "" }
                     ${ if (sluttDato != null) "and varsel.varseltidspunkt < :sluttDato " else "" }
                     ${ if (varseltype != null) "and varsel.event_type = :varseltype " else "" }
-                group by tt.tekst, varseltype, namespace, appnavn
+                group by ${queryHelper.columns}, varseltype, namespace, appnavn
                 order by antall desc
             """,
                 mapOf(
@@ -118,94 +89,35 @@ class VarseltekstRepository(private val database: Database) {
                             appnavn = it.string("appnavn")
                         ),
                         antall = it.int("antall"),
-                        tekst = it.string("tekst")
-                    )
-                }.asList
-        }
-    }
-
-    private fun tellStandandardteksterTotalt(
-        teksttype: Teksttype,
-        varseltype: String?,
-        startDato: LocalDate?,
-        sluttDato: LocalDate?,
-    ): VarselTekster.TotaltAntall {
-
-        return database.single {
-            queryOf("""
-                select
-                    count(*) as antall
-                from
-                    varsel
-                where
-                    ${teksttype.preferenceColumn} and ${teksttype.columnTableName} is null
-                    ${ if (startDato != null) "and varsel.varseltidspunkt > :startDato " else "" }
-                    ${ if (sluttDato != null) "and varsel.varseltidspunkt < :sluttDato " else "" }
-                    ${ if (varseltype != null) "and varsel.event_type = :varseltype " else "" }
-                order by antall desc
-            """,
-                mapOf(
-                    "startDato" to startDato,
-                    "sluttDato" to sluttDato,
-                    "varseltype" to varseltype
-                )
-            )
-                .map {
-                    VarselTekster.TotaltAntall(
-                        antall = it.int("antall"),
-                        tekst = null
-                    )
-                }.asSingle
-        }
-    }
-
-    private fun tellStandandardtekster(
-        teksttype: Teksttype,
-        varseltype: String?,
-        startDato: LocalDate?,
-        sluttDato: LocalDate?
-    ): List<VarselTekster.DetaljertAntall> {
-
-        return database.list {
-            queryOf("""
-                select
-                    count(*) as antall,
-                    varsel.event_type as varseltype,
-                    varsel.produsent_namespace as namespace,
-                    varsel.produsent_appnavn as appnavn
-                from
-                    varsel
-                where
-                    ${teksttype.preferenceColumn} and ${teksttype.columnTableName} is null
-                    ${ if (startDato != null) "and varsel.varseltidspunkt > :startDato " else "" }
-                    ${ if (sluttDato != null) "and varsel.varseltidspunkt < :sluttDato " else "" }
-                    ${ if (varseltype != null) "and varsel.event_type = :varseltype " else "" }
-                group by varseltype, namespace, appnavn
-                order by antall desc
-            """,
-                mapOf(
-                    "startDato" to startDato,
-                    "sluttDato" to sluttDato,
-                    "varseltype" to varseltype
-                )
-            )
-                .map {
-                    VarselTekster.DetaljertAntall(
-                        varseltype = it.string("varseltype"),
-                        produsent = VarselTekster.Produsent(
-                            namespace = it.string("namespace"),
-                            appnavn = it.string("appnavn")
-                        ),
-                        antall = it.int("antall"),
-                        tekst = null
+                        tekst = it.stringOrNull("tekst")
                     )
                 }.asList
         }
     }
 }
 
+private class DynamicQueryHelper(
+    teksttyper: List<Teksttype>,
+    inkluderStandardtekster: Boolean
+) {
+
+    val columns = teksttyper.mapIndexed { i, _ -> "tt$i.tekst" }.joinToString()
+
+    val join = teksttyper.mapIndexed { i, teksttype ->
+        "left join ${teksttype.columnTableName} as tt$i on varsel.${teksttype.columnTableName} = tt$i.id"
+    }.joinToString(" ")
+
+    val where = teksttyper.mapIndexed { i, teksttype ->
+        if (inkluderStandardtekster) {
+            "((varsel.${teksttype.preferenceColumn} and varsel.${teksttype.columnTableName} is null) or ${teksttype.columnTableName} is not null)"
+        } else {
+            "varsel.${teksttype.columnTableName} is not null"
+        }
+    }.joinToString(" ")
+}
+
 enum class Teksttype(val columnTableName: String, val preferenceColumn: String) {
-    WebTekst("web_tekst", "N/A"),
+    WebTekst("web_tekst", "false"),
     SmsTekst("sms_tekst", "sms_preferert"),
     EpostTittel("epost_tittel", "epost_preferert"),
     EpostTekst("epost_tekst", "epost_preferert");
