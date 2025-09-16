@@ -5,7 +5,7 @@ export const axiosInstance = axios.create({
 });
 
 export interface DownloadRequest {
-	teksttype: string,
+	teksttyper: string[],
 	detaljert: boolean,
 	varseltype: string | null,
 	startDato: string | null,
@@ -19,7 +19,7 @@ export function sendVarselQuery(request: DownloadRequest): Promise<Response> {
 	return fetch(`/api/download`, {
 		method: 'POST',
 		body: JSON.stringify({
-			teksttype: request.teksttype,
+			teksttype: request.teksttyper,
 			detaljert: request.detaljert,
 			varseltype: request.varseltype,
 			startDato: request.startDato,

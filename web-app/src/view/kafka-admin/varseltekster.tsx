@@ -48,12 +48,14 @@ enum Varseltype {
 	INNBOKS = 'Innboks',
 }
 
-
 const MAX_INTERVAL_MS: number = 5000
+
+const TEKSTTYPE_ERROR: string = "Du må velge minst én tekst-type"
 
 function ReadFromTopicCard() {
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [teksttypeField, setTeksttypeField] = useState<Teksttype>(Teksttype.WEB_TEKST);
+	const [teksttyperField, setTeksttyperField] = useState<string[]>([]);
+	const [teksttyperError, setTeksttyperError] = useState<string>();
 	const [varseltypeField, setVarseltypeField] = useState<Varseltype>(Varseltype.ALLE);
 	const [detaljertField, setDetaljertField] = useState<boolean>(false);
 	const [fromDateField, setFromDateField] = useState<Date | null>(null);
@@ -69,6 +71,13 @@ function ReadFromTopicCard() {
 	const toDatePicker = useDatepicker({
 		onDateChange: (date) => setToDateField(date || null),
 	})
+
+	const handleTekstType = (typer: string[]) => {
+		if (typer.length == 0) {
+			setTeksttyperError(TEKSTTYPE_ERROR)
+		}
+		setTeksttyperField(typer)
+	}
 
 	function awaitFile(fileLocation: string, nextInterval: number = 250) {
 		setTimeout(() => {
@@ -88,6 +97,11 @@ function ReadFromTopicCard() {
 	}
 
 	async function handleDownloadQuery() {
+		if (teksttyperField.length == 0) {
+			setTeksttyperError(TEKSTTYPE_ERROR)
+			return
+		}
+
 		setIsLoading(true);
 
 		let varseltype: string | null;
@@ -99,7 +113,7 @@ function ReadFromTopicCard() {
 		}
 
 		const request: DownloadRequest = {
-			teksttype: teksttypeField,
+			teksttyper: teksttyperField,
 			detaljert: detaljertField,
 			varseltype: varseltype,
 			startDato: fromDateField?.toISOString() || null,
@@ -135,16 +149,16 @@ function ReadFromTopicCard() {
 				Hent utrekk av hvilke varseltekster som sendes ut, og i hvilket antall
 			</BodyShort>
 
-			<Select
-				label="Tekst-type"
-				value={teksttypeField}
-				onChange={e => setTeksttypeField(e.target.value as Teksttype)}
+			<CheckboxGroup
+				legend="Tekst-typer"
+				onChange={handleTekstType}
+				error={teksttyperError}
 			>
-				<option value={Teksttype.WEB_TEKST}>Web-tekst (Tekst på min side)</option>
-				<option value={Teksttype.SMS_TEKST}>Sms-tekst</option>
-				<option value={Teksttype.EPOST_TITTEL}>Epost-tittel</option>
-				<option value={Teksttype.EPOST_TEKST}>Epost-tekst</option>
-			</Select>
+				<Checkbox value={Teksttype.WEB_TEKST}>Web-tekst (Tekst på min side)</Checkbox>
+				<Checkbox value={Teksttype.SMS_TEKST}>Sms-tekst</Checkbox>
+				<Checkbox value={Teksttype.EPOST_TITTEL}>Epost-tittel</Checkbox>
+				<Checkbox value={Teksttype.EPOST_TEKST}>Epost-tekst</Checkbox>
+			</CheckboxGroup>
 
 			<RadioGroup
 				legend="Tell antall..."
