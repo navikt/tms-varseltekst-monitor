@@ -14,7 +14,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
 
-class AntallVarselRepositoryTestRouteTest {
+class AntallVarselRepositoryTest {
     private val database = LocalPostgresDatabase.migratedDb()
 
     private val varselRepository = VarselRepository(database)
@@ -33,10 +33,10 @@ class AntallVarselRepositoryTestRouteTest {
 
         val telteAntall = tellAntallVarseltekster(Teksttype.WebTekst)
 
-        telteAntall.first { it.varseltype == "oppgave" }.antall shouldBe 10
-        telteAntall.first { it.varseltype == "innboks" }.antall shouldBe 8
+        telteAntall.permutasjoner.first { it.varseltype == "oppgave" }.antall shouldBe 10
+        telteAntall.permutasjoner.first { it.varseltype == "innboks" }.antall shouldBe 8
 
-        telteAntall.sumOf { it.antall } shouldBe 18
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 18
     }
 
     @Test
@@ -47,11 +47,11 @@ class AntallVarselRepositoryTestRouteTest {
 
         val telteAntall = tellAntallVarseltekster(Teksttype.WebTekst)
 
-        telteAntall.first { it.produsent.appnavn == "appen" }.antall shouldBe 3
-        telteAntall.first { it.produsent.appnavn == "appto" }.antall shouldBe 5
-        telteAntall.first { it.produsent.appnavn == "app-api" }.antall shouldBe 13
+        telteAntall.permutasjoner.first { it.produsent.appnavn == "appen" }.antall shouldBe 3
+        telteAntall.permutasjoner.first { it.produsent.appnavn == "appto" }.antall shouldBe 5
+        telteAntall.permutasjoner.first { it.produsent.appnavn == "app-api" }.antall shouldBe 13
 
-        telteAntall.sumOf { it.antall } shouldBe 21
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 21
     }
 
     @Test
@@ -63,10 +63,10 @@ class AntallVarselRepositoryTestRouteTest {
 
         val telteAntall = tellAntallVarseltekster(Teksttype.WebTekst, startDato = fiveDaysAgo)
 
-        telteAntall.first { it.tekst == "Ny!" }.antall shouldBe 7
-        telteAntall.firstOrNull { it.tekst == "Gammel!" }.shouldBeNull()
+        telteAntall.permutasjoner.first { it.tekst() == "Ny!" }.antall shouldBe 7
+        telteAntall.permutasjoner.firstOrNull { it.tekst() == "Gammel!" }.shouldBeNull()
 
-        telteAntall.sumOf { it.antall } shouldBe 7
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 7
     }
 
     @Test
@@ -78,10 +78,10 @@ class AntallVarselRepositoryTestRouteTest {
 
         val telteAntall = tellAntallVarseltekster(Teksttype.WebTekst, sluttDato = fiveDaysAgo)
 
-        telteAntall.firstOrNull { it.tekst == "Ny!" }.shouldBeNull()
-        telteAntall.first { it.tekst == "Gammel!" }.antall shouldBe 5
+        telteAntall.permutasjoner.firstOrNull { it.tekst() == "Ny!" }.shouldBeNull()
+        telteAntall.permutasjoner.first { it.tekst() == "Gammel!" }.antall shouldBe 5
 
-        telteAntall.sumOf { it.antall } shouldBe 5
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 5
     }
 
     @Test
@@ -92,7 +92,7 @@ class AntallVarselRepositoryTestRouteTest {
 
         val telteAntall = tellAntallVarseltekster(Teksttype.WebTekst, varseltype = "innboks")
 
-        telteAntall.sumOf { it.antall } shouldBe 7
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 7
     }
 
     @Test
@@ -102,7 +102,7 @@ class AntallVarselRepositoryTestRouteTest {
 
         val telteAntall = tellAntallVarseltekster(Teksttype.SmsTekst, inkluderStandardtekster = false)
 
-        telteAntall.sumOf { it.antall } shouldBe 3
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 3
     }
 
     @Test
@@ -112,7 +112,7 @@ class AntallVarselRepositoryTestRouteTest {
 
         val telteAntall = tellAntallVarseltekster(Teksttype.SmsTekst, inkluderStandardtekster = true)
 
-        telteAntall.sumOf { it.antall } shouldBe 10
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 10
     }
 
     @Test
@@ -124,7 +124,7 @@ class AntallVarselRepositoryTestRouteTest {
         fillDb(29, "Tekst 5", varseltype = "oppgave")
 
         val telteAntall = tellAntallVarseltekster(Teksttype.WebTekst)
-        telteAntall.shouldBeSortedDescendingBy { it.antall }
+        telteAntall.permutasjoner.shouldBeSortedDescendingBy { it.antall }
     }
 
     private fun fillDb(
@@ -166,10 +166,16 @@ class AntallVarselRepositoryTestRouteTest {
         sluttDato: LocalDate? = null,
         inkluderStandardtekster: Boolean = false
     ) = varseltekstRepository.tellAntallVarseltekster(
-        teksttype,
+        listOf(teksttype),
         varseltype,
         startDato,
         sluttDato,
         inkluderStandardtekster
     )
+
+    private fun DetaljertAntall.Permutasjon.tekst(): String? {
+        if (tekster.size != 1) throw IllegalArgumentException("Permutasjon kan kun ha 1 tekst ved bruk av tekst()")
+
+        return tekster.first().tekst
+    }
 }

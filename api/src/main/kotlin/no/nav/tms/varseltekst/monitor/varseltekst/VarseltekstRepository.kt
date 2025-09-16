@@ -1,5 +1,6 @@
 package no.nav.tms.varseltekst.monitor.varseltekst
 
+import kotliquery.Row
 import kotliquery.queryOf
 import no.nav.tms.varseltekst.monitor.setup.Database
 import java.time.LocalDate
@@ -7,21 +8,21 @@ import java.time.LocalDate
 class VarseltekstRepository(private val database: Database) {
 
     fun tellAntallVarselteksterTotalt(
-        teksttype: Teksttype,
+        teksttyper: List<Teksttype>,
         varseltype: String?,
         startDato: LocalDate?,
         sluttDato: LocalDate?,
         inkluderStandardtekster: Boolean
-    ): List<VarselTekster.TotaltAntall> {
+    ): TotaltAntall {
 
-        val queryHelper = DynamicQueryHelper(listOf(teksttype), inkluderStandardtekster)
+        val queryHelper = DynamicQueryHelper(teksttyper, inkluderStandardtekster)
 
         return database.list {
             queryOf(
                 """
                 select
                     count(*) as antall,
-                    ${ queryHelper.columns }
+                    ${ queryHelper.select }
                 from
                     varsel ${ queryHelper.join }
                 where
@@ -29,7 +30,7 @@ class VarseltekstRepository(private val database: Database) {
                     ${ if (startDato != null) "and varsel.varseltidspunkt > :startDato " else "" }
                     ${ if (sluttDato != null) "and varsel.varseltidspunkt < :sluttDato " else "" }
                     ${ if (varseltype != null) "and varsel.event_type = :varseltype " else "" }
-                group by ${ queryHelper.columns }
+                group by ${ queryHelper.groupBy }
                 order by antall desc
             """,
                 mapOf(
@@ -39,23 +40,25 @@ class VarseltekstRepository(private val database: Database) {
                 )
             )
                 .map {
-                    VarselTekster.TotaltAntall(
+                    TotaltAntall.Permutasjon(
                         antall = it.int("antall"),
-                        tekst = it.stringOrNull("tekst")
+                        tekster = queryHelper.mapTekster(it)
                     )
                 }.asList
+        }.let {
+            TotaltAntall(teksttyper, it)
         }
     }
 
     fun tellAntallVarseltekster(
-        teksttype: Teksttype,
+        teksttyper: List<Teksttype>,
         varseltype: String?,
         startDato: LocalDate?,
         sluttDato: LocalDate?,
         inkluderStandardtekster: Boolean
-    ): List<VarselTekster.DetaljertAntall> {
+    ): DetaljertAntall {
 
-        val queryHelper = DynamicQueryHelper(listOf(teksttype), inkluderStandardtekster)
+        val queryHelper = DynamicQueryHelper(teksttyper, inkluderStandardtekster)
 
         return database.list {
             queryOf("""
@@ -64,7 +67,7 @@ class VarseltekstRepository(private val database: Database) {
                     varsel.event_type as varseltype,
                     varsel.produsent_namespace as namespace,
                     varsel.produsent_appnavn as appnavn,
-                    ${queryHelper.columns}
+                    ${queryHelper.select}
                 from
                     varsel ${ queryHelper.join }
                 where
@@ -72,7 +75,7 @@ class VarseltekstRepository(private val database: Database) {
                     ${ if (startDato != null) "and varsel.varseltidspunkt > :startDato " else "" }
                     ${ if (sluttDato != null) "and varsel.varseltidspunkt < :sluttDato " else "" }
                     ${ if (varseltype != null) "and varsel.event_type = :varseltype " else "" }
-                group by ${queryHelper.columns}, varseltype, namespace, appnavn
+                group by ${queryHelper.groupBy}, varseltype, namespace, appnavn
                 order by antall desc
             """,
                 mapOf(
@@ -82,26 +85,27 @@ class VarseltekstRepository(private val database: Database) {
                 )
             )
                 .map {
-                    VarselTekster.DetaljertAntall(
+                    DetaljertAntall.Permutasjon(
                         varseltype = it.string("varseltype"),
-                        produsent = VarselTekster.Produsent(
+                        produsent = DetaljertAntall.Produsent(
                             namespace = it.string("namespace"),
                             appnavn = it.string("appnavn")
                         ),
                         antall = it.int("antall"),
-                        tekst = it.stringOrNull("tekst")
+                        tekster = queryHelper.mapTekster(it)
                     )
                 }.asList
+        }.let {
+            DetaljertAntall(teksttyper, it)
         }
     }
 }
 
 private class DynamicQueryHelper(
-    teksttyper: List<Teksttype>,
+    val teksttyper: List<Teksttype>,
     inkluderStandardtekster: Boolean
 ) {
-
-    val columns = teksttyper.mapIndexed { i, _ -> "tt$i.tekst" }.joinToString()
+    val select = teksttyper.mapIndexed { i, _ -> "tt$i.tekst as tekst_$i" }.joinToString()
 
     val join = teksttyper.mapIndexed { i, teksttype ->
         "left join ${teksttype.columnTableName} as tt$i on varsel.${teksttype.columnTableName} = tt$i.id"
@@ -114,6 +118,14 @@ private class DynamicQueryHelper(
             "varsel.${teksttype.columnTableName} is not null"
         }
     }.joinToString(" ")
+
+    val groupBy = teksttyper.mapIndexed { i, _ -> "tekst_$i" }.joinToString()
+
+    fun mapTekster(row: Row): List<Tekst> {
+        return teksttyper.mapIndexed { i, _ ->
+            Tekst(row.stringOrNull("tekst_$i"))
+        }
+    }
 }
 
 enum class Teksttype(val columnTableName: String, val preferenceColumn: String) {

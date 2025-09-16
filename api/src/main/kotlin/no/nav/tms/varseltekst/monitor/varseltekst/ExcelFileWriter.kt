@@ -1,7 +1,5 @@
 package no.nav.tms.varseltekst.monitor.varseltekst
 
-import no.nav.tms.varseltekst.monitor.varseltekst.VarselTekster.DetaljertAntall
-import no.nav.tms.varseltekst.monitor.varseltekst.VarselTekster.TotaltAntall
 import org.apache.poi.ss.usermodel.CellType
 import org.apache.poi.ss.usermodel.Workbook
 import org.apache.poi.xssf.usermodel.XSSFSheet
@@ -10,32 +8,40 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
 object ExcelFileWriter {
 
-    fun totaltAntallToExcelSheet(totaltAntall: List<TotaltAntall>, teksttype: Teksttype, minAntall: Int): Workbook {
-        val (workbook, sheet) = initWorkbook(teksttype, "Antall", "Tekst")
+    fun totaltAntallToExcelSheet(totaltAntall: TotaltAntall, teksttype: Teksttype, minAntall: Int): Workbook {
+
+        val tekstkolonner = totaltAntall.teksttyper.map { it.name }.toTypedArray()
+
+        val (workbook, sheet) = initWorkbook(teksttype, "Antall", *tekstkolonner)
 
         sheet.setColumnWidth(1, 25000)
 
         val antallTekster = sladdTekster(totaltAntall, minAntall)
 
-        antallTekster.forEachIndexed { i, antall ->
+        antallTekster.permutasjoner.forEachIndexed { i, permutasjon ->
             val row = sheet.createRow(i + 1)
 
             row.createCell(0).apply {
                 cellType = CellType.NUMERIC
-                setCellValue(antall.antall.toDouble())
+                setCellValue(permutasjon.antall.toDouble())
             }
 
-            row.createCell(1).apply {
-                cellType = CellType.STRING
-                setCellValue(antall.tekst ?: "<standardtekst>")
+            permutasjon.tekster.forEachIndexed { index, tekst ->
+                row.createCell(1 + index).apply {
+                    cellType = CellType.STRING
+                    setCellValue(tekst.tekst ?: "<standardtekst>")
+                }
             }
         }
 
         return workbook
     }
 
-    fun antallToExcelSheet(detaljertAntall: List<DetaljertAntall>, teksttype: Teksttype, minAntall: Int): Workbook {
-        val (workbook, sheet) = initWorkbook(teksttype, "Antall", "Varseltype", "Namespace", "Appnavn", "Tekst")
+    fun antallToExcelSheet(detaljertAntall: DetaljertAntall, teksttype: Teksttype, minAntall: Int): Workbook {
+
+        val tekstkolonner = detaljertAntall.teksttyper.map { it.name }.toTypedArray()
+
+        val (workbook, sheet) = initWorkbook(teksttype, "Antall", "Varseltype", "Namespace", "Appnavn", *tekstkolonner)
 
         sheet.setColumnWidth(2, 3000)
         sheet.setColumnWidth(3, 5000)
@@ -43,70 +49,93 @@ object ExcelFileWriter {
 
         val antallTekster = sladdDetaljerteTekster(detaljertAntall, minAntall)
 
-        antallTekster.forEachIndexed { i, antall ->
+        antallTekster.permutasjoner.forEachIndexed { i, permutasjon ->
             val row = sheet.createRow(i + 1)
 
             row.createCell(0).apply {
                 cellType = CellType.NUMERIC
-                setCellValue(antall.antall.toDouble())
+                setCellValue(permutasjon.antall.toDouble())
             }
 
             row.createCell(1).apply {
                 cellType = CellType.STRING
-                setCellValue(antall.varseltype)
+                setCellValue(permutasjon.varseltype)
             }
 
             row.createCell(2).apply {
                 cellType = CellType.STRING
-                setCellValue(antall.produsent.namespace)
+                setCellValue(permutasjon.produsent.namespace)
             }
 
             row.createCell(3).apply {
                 cellType = CellType.STRING
-                setCellValue(antall.produsent.appnavn)
+                setCellValue(permutasjon.produsent.appnavn)
             }
 
-            row.createCell(4).apply {
-                cellType = CellType.STRING
-                setCellValue(antall.tekst ?: "<standardtekst>")
+            permutasjon.tekster.forEachIndexed { index, tekst ->
+                row.createCell(4 + index).apply {
+                    cellType = CellType.STRING
+                    setCellValue(tekst.tekst ?: "<standardtekst>")
+                }
             }
         }
 
         return workbook
     }
 
-    private fun sladdDetaljerteTekster(tekster: List<DetaljertAntall>, minAntall: Int): List<DetaljertAntall> {
-        val (beholdes, skalSladdes) = tekster.partition { it.antall >= minAntall || it.tekst == null }
+    private fun sladdDetaljerteTekster(detaljertAntall: DetaljertAntall, minAntall: Int): DetaljertAntall {
 
-        val sladdet = skalSladdes
-            .groupBy { it.varseltype to it.produsent }
-            .mapValues { (_, v) -> v.sumOf { it.antall } }
-            .map { (typeProdusent, sumAntall) ->
+        val (beholdes, sladdes) = detaljertAntall.permutasjoner.partition { it.antall >= minAntall || it.tekster.all(Tekst::isStandard) }
 
-                val (varseltype, produsent) = typeProdusent
+        val sladdet = sladdes.map { permutasjon ->
+            DetaljertAntall.Permutasjon(
+                varseltype = permutasjon.varseltype,
+                produsent = permutasjon.produsent,
+                antall = permutasjon.antall,
+                tekster = permutasjon.tekster.map {
+                    Tekst(if (it.isStandard) null else "<sladdet>")
+                }
+            )
+        }.groupBy {
+            Triple(it.varseltype, it.produsent, it.tekster)
+        }.map { (vpt, permutasjoner) ->
+            DetaljertAntall.Permutasjon(
+                varseltype = vpt.first,
+                produsent = vpt.second,
+                antall = permutasjoner.sumOf { it.antall },
+                tekster = vpt.third
+            )
+        }
 
-                DetaljertAntall(
-                    varseltype = varseltype,
-                    produsent = produsent,
-                    antall = sumAntall,
-                    tekst = "<sladdet>"
-                )
-            }
 
-        return (beholdes + sladdet).sortedByDescending { it.antall }
+        return (sladdet + beholdes)
+            .sortedByDescending { it.antall }
+            .let { DetaljertAntall(detaljertAntall.teksttyper, it) }
     }
 
-    private fun sladdTekster(tekster: List<TotaltAntall>, minAntall: Int): List<TotaltAntall> {
-        val (beholdes, sladdes) = tekster.partition { it.antall >= minAntall || it.tekst == null }
+    private fun sladdTekster(totaltAntall: TotaltAntall, minAntall: Int): TotaltAntall {
 
-        val sumAntall = sladdes.sumOf { it.antall }
+        val (beholdes, sladdes) = totaltAntall.permutasjoner.partition { it.antall >= minAntall || it.tekster.all(Tekst::isStandard) }
 
-        val sladdet = TotaltAntall(
-            antall = sumAntall,
-            tekst = "<sladdet>"
-        )
+        val sladdet = sladdes.map { permutasjon ->
+            TotaltAntall.Permutasjon(
+                antall = permutasjon.antall,
+                tekster = permutasjon.tekster.map {
+                    Tekst(if (it.isStandard) null else "<sladdet>")
+                }
+            )
+        }.groupBy {
+            it.tekster
+        }.map { (tekster, permutasjoner) ->
+            TotaltAntall.Permutasjon(
+                antall = permutasjoner.sumOf { it.antall },
+                tekster = tekster
+            )
+        }
 
-        return (beholdes + sladdet).sortedByDescending { it.antall }
+        return (sladdet + beholdes)
+            .sortedByDescending { it.antall }
+            .let { TotaltAntall(totaltAntall.teksttyper, it) }
     }
 
     private fun initWorkbook(teksttype: Teksttype, vararg columns: String): Pair<XSSFWorkbook, XSSFSheet> {

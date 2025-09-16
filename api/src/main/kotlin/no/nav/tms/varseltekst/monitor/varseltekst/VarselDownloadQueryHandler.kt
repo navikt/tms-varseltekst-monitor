@@ -11,7 +11,7 @@ class VarselDownloadQueryHandler(
     fun startQuery(request: DownloadRequest): Deferred<Workbook> = queryScope.async {
         if (request.detaljert) {
             varseltekstRepository.tellAntallVarseltekster(
-                teksttype = request.teksttype,
+                teksttyper = listOf(request.teksttype),
                 varseltype = request.varseltype,
                 startDato = request.startDato,
                 sluttDato = request.sluttDato,
@@ -21,7 +21,7 @@ class VarselDownloadQueryHandler(
             }
         } else {
             varseltekstRepository.tellAntallVarselteksterTotalt(
-                teksttype = request.teksttype,
+                teksttyper = listOf(request.teksttype),
                 varseltype = request.varseltype,
                 startDato = request.startDato,
                 sluttDato = request.sluttDato,

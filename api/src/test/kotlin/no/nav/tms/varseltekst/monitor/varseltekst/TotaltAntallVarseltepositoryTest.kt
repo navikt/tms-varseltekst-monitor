@@ -32,10 +32,10 @@ class TotaltAntallVarseltepositoryTest {
 
         val telteAntall = tellAntallVarselteksterTotalt(Teksttype.WebTekst)
 
-        telteAntall.first { it.tekst == "Hei!" }.antall shouldBe 10
-        telteAntall.first { it.tekst == "Hallo!" }.antall shouldBe 5
+        telteAntall.permutasjoner.first { it.tekst() == "Hei!" }.antall shouldBe 10
+        telteAntall.permutasjoner.first { it.tekst() == "Hallo!" }.antall shouldBe 5
 
-        telteAntall.sumOf { it.antall } shouldBe 15
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 15
     }
 
     @Test
@@ -47,10 +47,10 @@ class TotaltAntallVarseltepositoryTest {
 
         val telteAntall = tellAntallVarselteksterTotalt(Teksttype.WebTekst, startDato = fiveDaysAgo)
 
-        telteAntall.first { it.tekst == "Ny!" }.antall shouldBe 7
-        telteAntall.firstOrNull { it.tekst == "Gammel!" }.shouldBeNull()
+        telteAntall.permutasjoner.first { it.tekst() == "Ny!" }.antall shouldBe 7
+        telteAntall.permutasjoner.firstOrNull { it.tekst() == "Gammel!" }.shouldBeNull()
 
-        telteAntall.sumOf { it.antall } shouldBe 7
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 7
     }
 
     @Test
@@ -63,10 +63,10 @@ class TotaltAntallVarseltepositoryTest {
         val telteAntall = tellAntallVarselteksterTotalt(Teksttype.WebTekst, sluttDato = fiveDaysAgo)
 
 
-        telteAntall.firstOrNull { it.tekst == "Ny!" }.shouldBeNull()
-        telteAntall.first { it.tekst == "Gammel!" }.antall shouldBe 5
+        telteAntall.permutasjoner.firstOrNull { it.tekst() == "Ny!" }.shouldBeNull()
+        telteAntall.permutasjoner.first { it.tekst() == "Gammel!" }.antall shouldBe 5
 
-        telteAntall.sumOf { it.antall } shouldBe 5
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 5
     }
 
     @Test
@@ -77,7 +77,7 @@ class TotaltAntallVarseltepositoryTest {
 
         val telteAntall = tellAntallVarselteksterTotalt(Teksttype.WebTekst, varseltype = "innboks")
 
-        telteAntall.sumOf { it.antall } shouldBe 7
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 7
     }
 
     @Test
@@ -87,7 +87,7 @@ class TotaltAntallVarseltepositoryTest {
 
         val telteAntall = tellAntallVarselteksterTotalt(Teksttype.SmsTekst)
 
-        telteAntall.sumOf { it.antall } shouldBe 3
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 3
     }
 
     @Test
@@ -97,7 +97,7 @@ class TotaltAntallVarseltepositoryTest {
 
         val telteAntall = tellAntallVarselteksterTotalt(Teksttype.SmsTekst, inkluderStandardtekster = true)
 
-        telteAntall.sumOf { it.antall } shouldBe 10
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 10
     }
 
     @Test
@@ -110,17 +110,17 @@ class TotaltAntallVarseltepositoryTest {
 
         val telteAntall = tellAntallVarselteksterTotalt(Teksttype.WebTekst)
 
-        telteAntall.shouldBeSortedDescendingBy { it.antall }
+        telteAntall.permutasjoner.shouldBeSortedDescendingBy { it.antall }
     }
 
-    fun tellAntallVarselteksterTotalt(
+    private fun tellAntallVarselteksterTotalt(
         teksttype: Teksttype,
         varseltype: String? = null,
         startDato: LocalDate? = null,
         sluttDato: LocalDate? = null,
         inkluderStandardtekster: Boolean = false
     ) = varseltekstRepository.tellAntallVarselteksterTotalt(
-        teksttype,
+        listOf(teksttype),
         varseltype,
         startDato,
         sluttDato,
@@ -157,5 +157,11 @@ class TotaltAntallVarseltepositoryTest {
                 varselRepository.persistVarsel(it)
             }
         }
+    }
+
+    private fun TotaltAntall.Permutasjon.tekst(): String? {
+        if (tekster.size != 1) throw IllegalArgumentException("Permutasjon kan kun ha 1 tekst ved bruk av tekst()")
+
+        return tekster.first().tekst
     }
 }
