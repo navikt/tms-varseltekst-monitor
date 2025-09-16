@@ -19,7 +19,7 @@ export function sendVarselQuery(request: DownloadRequest): Promise<Response> {
 	return fetch(`/api/download`, {
 		method: 'POST',
 		body: JSON.stringify({
-			teksttype: request.teksttyper,
+			teksttyper: request.teksttyper,
 			detaljert: request.detaljert,
 			varseltype: request.varseltype,
 			startDato: request.startDato,
