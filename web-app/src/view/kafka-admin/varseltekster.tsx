@@ -75,6 +75,8 @@ function ReadFromTopicCard() {
 	const handleTekstType = (typer: string[]) => {
 		if (typer.length == 0) {
 			setTeksttyperError(TEKSTTYPE_ERROR)
+		} else {
+			setTeksttyperError("")
 		}
 		setTeksttyperField(typer)
 	}
