@@ -99,13 +99,22 @@ private data class ExcelFile(
 
 private fun filename(request: DownloadRequest): String {
     return when {
-        request.filnavn == null -> "${LocalDate.now()}-varseltekster-${request.teksttype.name.lowercase()}-${if (request.detaljert) "" else "totalt-"}antall.xlsx"
+        request.filnavn == null -> {
+            val teksttypePart = if (request.teksttyper.size == 1) {
+                request.teksttyper.first().name.lowercase()
+            } else {
+                "kombinasjon"
+            }
+
+            "${LocalDate.now()}-varseltekster-$teksttypePart-${if (request.detaljert) "" else "totalt-"}antall.xlsx"
+        }
         request.filnavn.endsWith(".xlsx") -> request.filnavn
         else -> "${request.filnavn}.xlsx"
     }
 }
 data class DownloadRequest(
-    val teksttype: Teksttype,
+    @JsonAlias("teksttype") private val _teksttype: Teksttype? = null,
+    @JsonAlias("teksttyper") private val _teksttyper: List<Teksttype> = emptyList(),
     val detaljert: Boolean = false,
     val varseltype: String? = null,
     val startDato: LocalDate? = null,
@@ -114,6 +123,14 @@ data class DownloadRequest(
     @JsonAlias("minimumAntall") private val _minimumAntall: Int = 100,
     val filnavn: String? = null
 ) {
+    val teksttyper get() = if (_teksttyper.isNotEmpty()) {
+        _teksttyper
+    } else if (_teksttype != null) {
+        listOf(_teksttype)
+    } else {
+        throw IllegalArgumentException("Må spesifisere minst én teksttype")
+    }
+
     val minimumAntall = max(100, _minimumAntall)
 }
 

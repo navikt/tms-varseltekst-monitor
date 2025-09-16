@@ -113,11 +113,11 @@ private class DynamicQueryHelper(
 
     val where = teksttyper.mapIndexed { i, teksttype ->
         if (inkluderStandardtekster) {
-            "((varsel.${teksttype.preferenceColumn} and varsel.${teksttype.columnTableName} is null) or ${teksttype.columnTableName} is not null)"
+            "((${teksttype.preferenceColumn} and varsel.${teksttype.columnTableName} is null) or ${teksttype.columnTableName} is not null)"
         } else {
             "varsel.${teksttype.columnTableName} is not null"
         }
-    }.joinToString(" ")
+    }.joinToString(" and ")
 
     val groupBy = teksttyper.mapIndexed { i, _ -> "tekst_$i" }.joinToString()
 

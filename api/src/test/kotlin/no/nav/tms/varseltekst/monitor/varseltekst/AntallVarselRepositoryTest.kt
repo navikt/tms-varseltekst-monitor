@@ -37,6 +37,8 @@ class AntallVarselRepositoryTest {
         telteAntall.permutasjoner.first { it.varseltype == "innboks" }.antall shouldBe 8
 
         telteAntall.permutasjoner.sumOf { it.antall } shouldBe 18
+
+        telteAntall.teksttyper shouldBe listOf(Teksttype.WebTekst)
     }
 
     @Test
@@ -52,6 +54,8 @@ class AntallVarselRepositoryTest {
         telteAntall.permutasjoner.first { it.produsent.appnavn == "app-api" }.antall shouldBe 13
 
         telteAntall.permutasjoner.sumOf { it.antall } shouldBe 21
+
+        telteAntall.teksttyper shouldBe listOf(Teksttype.WebTekst)
     }
 
     @Test
@@ -67,6 +71,8 @@ class AntallVarselRepositoryTest {
         telteAntall.permutasjoner.firstOrNull { it.tekst() == "Gammel!" }.shouldBeNull()
 
         telteAntall.permutasjoner.sumOf { it.antall } shouldBe 7
+
+        telteAntall.teksttyper shouldBe listOf(Teksttype.WebTekst)
     }
 
     @Test
@@ -82,6 +88,8 @@ class AntallVarselRepositoryTest {
         telteAntall.permutasjoner.first { it.tekst() == "Gammel!" }.antall shouldBe 5
 
         telteAntall.permutasjoner.sumOf { it.antall } shouldBe 5
+
+        telteAntall.teksttyper shouldBe listOf(Teksttype.WebTekst)
     }
 
     @Test
@@ -93,6 +101,8 @@ class AntallVarselRepositoryTest {
         val telteAntall = tellAntallVarseltekster(Teksttype.WebTekst, varseltype = "innboks")
 
         telteAntall.permutasjoner.sumOf { it.antall } shouldBe 7
+
+        telteAntall.teksttyper shouldBe listOf(Teksttype.WebTekst)
     }
 
     @Test
@@ -103,6 +113,8 @@ class AntallVarselRepositoryTest {
         val telteAntall = tellAntallVarseltekster(Teksttype.SmsTekst, inkluderStandardtekster = false)
 
         telteAntall.permutasjoner.sumOf { it.antall } shouldBe 3
+
+        telteAntall.teksttyper shouldBe listOf(Teksttype.SmsTekst)
     }
 
     @Test
@@ -113,6 +125,8 @@ class AntallVarselRepositoryTest {
         val telteAntall = tellAntallVarseltekster(Teksttype.SmsTekst, inkluderStandardtekster = true)
 
         telteAntall.permutasjoner.sumOf { it.antall } shouldBe 10
+
+        telteAntall.teksttyper shouldBe listOf(Teksttype.SmsTekst)
     }
 
     @Test
@@ -125,6 +139,96 @@ class AntallVarselRepositoryTest {
 
         val telteAntall = tellAntallVarseltekster(Teksttype.WebTekst)
         telteAntall.permutasjoner.shouldBeSortedDescendingBy { it.antall }
+        telteAntall.teksttyper shouldBe listOf(Teksttype.WebTekst)
+    }
+
+    @Test
+    fun `teller antall varseltekster av flere typer samtidig`() {
+        fillDb(10, "Hei!", smsTekst = "SMS!")
+        fillDb(5, "Hallo!", smsTekst = "SMS!")
+        fillDb(7, "Hallo!", smsTekst = "Annen SMS!")
+        fillDb(2, "Hallo!", smsTekst = "Annen SMS!", epostTekst = "Epost..")
+
+        val telteAntall = tellAntallVarseltekster(listOf(Teksttype.WebTekst, Teksttype.SmsTekst))
+
+        telteAntall.permutasjoner.size shouldBe 3
+
+        telteAntall.permutasjoner.first { it.tekst(0) == "Hei!" }.antall shouldBe 10
+        telteAntall.permutasjoner.first { it.tekst(0) == "Hallo!" && it.tekst(1) == "SMS!" }.antall shouldBe 5
+        telteAntall.permutasjoner.first { it.tekst(0) == "Hallo!" && it.tekst(1) == "Annen SMS!" }.antall shouldBe 9
+
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 24
+
+        telteAntall.teksttyper shouldBe listOf(Teksttype.WebTekst, Teksttype.SmsTekst)
+    }
+
+    @Test
+    fun `teller antall varseltekster av flere typer samtidig inkludert standardtekst`() {
+        fillDb(10, "Hallo!", smsTekst = "SMS!")
+        fillDb(5, "Hallo!", smsTekst = "SMS!", epostTekst = "Epost..")
+        fillDb(7, "Hallo!", smsTekst = null, smsSendt = true)
+        fillDb(2, "Hallo!", smsTekst = null, smsSendt = true)
+
+        val telteAntall = tellAntallVarseltekster(listOf(Teksttype.WebTekst, Teksttype.SmsTekst), inkluderStandardtekster = true)
+
+        telteAntall.permutasjoner.size shouldBe 2
+
+        telteAntall.permutasjoner.first { it.tekst(0) == "Hallo!" && it.tekst(1) == "SMS!" }.antall shouldBe 15
+        telteAntall.permutasjoner.first { it.tekst(0) == "Hallo!" && it.tekst(1) == null }.antall shouldBe 9
+
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 24
+
+        telteAntall.teksttyper shouldBe listOf(Teksttype.WebTekst, Teksttype.SmsTekst)
+    }
+
+    @Test
+    fun `teller antall varseltekster av flere typer per varseltype`() {
+        fillDb(10, "Hallo!", smsTekst = "Hei, SMS!", varseltype = "oppgave")
+        fillDb(3, "Hallo!", smsTekst = "Hei, SMS!", varseltype = "innboks")
+        fillDb(5, "Hallo!", smsTekst = "Hei, SMS!", varseltype = "innboks")
+
+        val telteAntall = tellAntallVarseltekster(listOf(Teksttype.WebTekst, Teksttype.SmsTekst))
+
+        telteAntall.permutasjoner.first { it.varseltype == "oppgave" }.antall shouldBe 10
+        telteAntall.permutasjoner.first { it.varseltype == "innboks" }.antall shouldBe 8
+
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 18
+
+        telteAntall.teksttyper shouldBe listOf(Teksttype.WebTekst, Teksttype.SmsTekst)
+    }
+
+    @Test
+    fun `teller antall varseltekster av flere typer per produsent`() {
+        fillDb(3, "Hallo!", smsTekst = "Hei, SMS!", produsent = Produsent("team-tim", "appen"))
+        fillDb(5, "Hallo!", smsTekst = "Hei, SMS!", produsent = Produsent("team-tim", "appto"))
+        fillDb(13, "Hallo!", smsTekst = "Hei, SMS!", produsent = Produsent("team-annet", "app-api"))
+
+        val telteAntall = tellAntallVarseltekster(listOf(Teksttype.WebTekst, Teksttype.SmsTekst))
+
+        telteAntall.permutasjoner.first { it.produsent.appnavn == "appen" }.antall shouldBe 3
+        telteAntall.permutasjoner.first { it.produsent.appnavn == "appto" }.antall shouldBe 5
+        telteAntall.permutasjoner.first { it.produsent.appnavn == "app-api" }.antall shouldBe 13
+
+        telteAntall.permutasjoner.sumOf { it.antall } shouldBe 21
+
+        telteAntall.teksttyper shouldBe listOf(Teksttype.WebTekst, Teksttype.SmsTekst)
+    }
+
+    @Test
+    fun `beholder rekkefølgen på kolonner basert på parameter`() {
+        fillDb(10, "WEB!", smsTekst = "SMS!")
+
+        tellAntallVarseltekster(listOf(Teksttype.WebTekst, Teksttype.SmsTekst)).let {
+            it.permutasjoner.first().tekst(0) shouldBe "WEB!"
+            it.permutasjoner.first().tekst(1) shouldBe "SMS!"
+            it.teksttyper shouldBe listOf(Teksttype.WebTekst, Teksttype.SmsTekst)
+        }
+
+        tellAntallVarseltekster(listOf(Teksttype.SmsTekst, Teksttype.WebTekst)).let {
+            it.permutasjoner.first().tekst(0) shouldBe "SMS!"
+            it.permutasjoner.first().tekst(1) shouldBe "WEB!"
+            it.teksttyper shouldBe listOf(Teksttype.SmsTekst, Teksttype.WebTekst)
+        }
     }
 
     private fun fillDb(
@@ -173,9 +277,27 @@ class AntallVarselRepositoryTest {
         inkluderStandardtekster
     )
 
+    fun tellAntallVarseltekster(
+        teksttyper: List<Teksttype>,
+        varseltype: String? = null,
+        startDato: LocalDate? = null,
+        sluttDato: LocalDate? = null,
+        inkluderStandardtekster: Boolean = false
+    ) = varseltekstRepository.tellAntallVarseltekster(
+        teksttyper,
+        varseltype,
+        startDato,
+        sluttDato,
+        inkluderStandardtekster
+    )
+
     private fun DetaljertAntall.Permutasjon.tekst(): String? {
         if (tekster.size != 1) throw IllegalArgumentException("Permutasjon kan kun ha 1 tekst ved bruk av tekst()")
 
         return tekster.first().tekst
+    }
+
+    private fun DetaljertAntall.Permutasjon.tekst(index: Int): String? {
+        return tekster[index].tekst
     }
 }
