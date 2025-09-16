@@ -11,23 +11,23 @@ class VarselDownloadQueryHandler(
     fun startQuery(request: DownloadRequest): Deferred<Workbook> = queryScope.async {
         if (request.detaljert) {
             varseltekstRepository.tellAntallVarseltekster(
-                teksttyper = listOf(request.teksttype),
+                teksttyper = request.teksttyper,
                 varseltype = request.varseltype,
                 startDato = request.startDato,
                 sluttDato = request.sluttDato,
                 inkluderStandardtekster = request.inkluderStandardtekster
             ).let {
-                ExcelFileWriter.antallToExcelSheet(it, request.teksttype, request.minimumAntall)
+                ExcelFileWriter.antallToExcelSheet(it, request.teksttyper, request.minimumAntall)
             }
         } else {
             varseltekstRepository.tellAntallVarselteksterTotalt(
-                teksttyper = listOf(request.teksttype),
+                teksttyper = request.teksttyper,
                 varseltype = request.varseltype,
                 startDato = request.startDato,
                 sluttDato = request.sluttDato,
                 inkluderStandardtekster = request.inkluderStandardtekster
             ).let {
-                ExcelFileWriter.totaltAntallToExcelSheet(it, request.teksttype, request.minimumAntall)
+                ExcelFileWriter.totaltAntallToExcelSheet(it, request.teksttyper, request.minimumAntall)
             }
         }
     }

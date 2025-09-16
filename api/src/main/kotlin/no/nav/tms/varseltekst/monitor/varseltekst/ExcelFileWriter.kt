@@ -8,11 +8,11 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
 object ExcelFileWriter {
 
-    fun totaltAntallToExcelSheet(totaltAntall: TotaltAntall, teksttype: Teksttype, minAntall: Int): Workbook {
+    fun totaltAntallToExcelSheet(totaltAntall: TotaltAntall, teksttyper: List<Teksttype>, minAntall: Int): Workbook {
 
         val tekstkolonner = totaltAntall.teksttyper.map { it.name }.toTypedArray()
 
-        val (workbook, sheet) = initWorkbook(teksttype, "Antall", *tekstkolonner)
+        val (workbook, sheet) = initWorkbook(teksttyper, "Antall", *tekstkolonner)
 
         sheet.setColumnWidth(1, 25000)
 
@@ -37,11 +37,11 @@ object ExcelFileWriter {
         return workbook
     }
 
-    fun antallToExcelSheet(detaljertAntall: DetaljertAntall, teksttype: Teksttype, minAntall: Int): Workbook {
+    fun antallToExcelSheet(detaljertAntall: DetaljertAntall, teksttyper: List<Teksttype>, minAntall: Int): Workbook {
 
         val tekstkolonner = detaljertAntall.teksttyper.map { it.name }.toTypedArray()
 
-        val (workbook, sheet) = initWorkbook(teksttype, "Antall", "Varseltype", "Namespace", "Appnavn", *tekstkolonner)
+        val (workbook, sheet) = initWorkbook(teksttyper, "Antall", "Varseltype", "Namespace", "Appnavn", *tekstkolonner)
 
         sheet.setColumnWidth(2, 3000)
         sheet.setColumnWidth(3, 5000)
@@ -138,10 +138,16 @@ object ExcelFileWriter {
             .let { TotaltAntall(totaltAntall.teksttyper, it) }
     }
 
-    private fun initWorkbook(teksttype: Teksttype, vararg columns: String): Pair<XSSFWorkbook, XSSFSheet> {
+    private fun initWorkbook(teksttyper: List<Teksttype>, vararg columns: String): Pair<XSSFWorkbook, XSSFSheet> {
         val workbook = XSSFWorkbook()
 
-        val sheet = workbook.createSheet(teksttype.name)
+        val sheetName = if (teksttyper.size == 1) {
+            teksttyper.first().name
+        } else {
+            "Kombinasjon"
+        }
+
+        val sheet = workbook.createSheet(sheetName)
 
         val header = sheet.createRow(0)
 
