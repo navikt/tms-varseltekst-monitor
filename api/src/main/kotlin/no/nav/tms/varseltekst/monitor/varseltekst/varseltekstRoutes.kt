@@ -113,8 +113,7 @@ private fun filename(request: DownloadRequest): String {
     }
 }
 data class DownloadRequest(
-    @JsonAlias("teksttype") private val _teksttype: Teksttype? = null,
-    @JsonAlias("teksttyper") private val _teksttyper: List<Teksttype> = emptyList(),
+    @JsonAlias("teksttyper") private val _teksttyper: List<Teksttype>,
     val detaljert: Boolean = false,
     val varseltype: String? = null,
     val startDato: LocalDate? = null,
@@ -123,10 +122,8 @@ data class DownloadRequest(
     @JsonAlias("minimumAntall") private val _minimumAntall: Int = 100,
     val filnavn: String? = null
 ) {
-    val teksttyper get() = if (_teksttyper.isNotEmpty()) {
-        _teksttyper
-    } else if (_teksttype != null) {
-        listOf(_teksttype)
+    val teksttyper = if (_teksttyper.isNotEmpty()) {
+        _teksttyper.distinct().sorted()
     } else {
         throw IllegalArgumentException("Må spesifisere minst én teksttype")
     }

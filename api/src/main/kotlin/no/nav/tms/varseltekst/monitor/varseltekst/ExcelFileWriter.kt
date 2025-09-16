@@ -14,7 +14,9 @@ object ExcelFileWriter {
 
         val (workbook, sheet) = initWorkbook(teksttyper, "Antall", *tekstkolonner)
 
-        sheet.setColumnWidth(1, 25000)
+        tekstkolonner.forEachIndexed { index, _ ->
+            sheet.setColumnWidth(1 + index, 25000)
+        }
 
         val antallTekster = sladdTekster(totaltAntall, minAntall)
 
@@ -45,7 +47,10 @@ object ExcelFileWriter {
 
         sheet.setColumnWidth(2, 3000)
         sheet.setColumnWidth(3, 5000)
-        sheet.setColumnWidth(4, 25000)
+
+        tekstkolonner.forEachIndexed { index, _ ->
+            sheet.setColumnWidth(4 + index, 25000)
+        }
 
         val antallTekster = sladdDetaljerteTekster(detaljertAntall, minAntall)
 
