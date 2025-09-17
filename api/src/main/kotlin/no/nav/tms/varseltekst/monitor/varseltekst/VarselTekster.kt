@@ -29,6 +29,9 @@ class TotaltAntall(
 
 data class Tekst(
     val tekst: String?,
+    val innhold: Innhold
 ) {
-    val isStandard = tekst == null
+    enum class Innhold {
+        Egendefinert, Standard, Ubrukt, Sladdet
+    }
 }

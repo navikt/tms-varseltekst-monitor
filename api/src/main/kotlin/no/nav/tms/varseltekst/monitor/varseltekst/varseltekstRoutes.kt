@@ -7,18 +7,13 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.*
-import org.apache.poi.ss.usermodel.Workbook
 import java.time.LocalDate
 import java.util.*
 import kotlin.math.max
 
-fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
+fun Route.varseltekstRoutes(queryService: VarseltekstQueryService) {
 
     val log = KotlinLogging.logger { }
-
-    val fileStore = mutableMapOf<String, ExcelFile>()
-
-    val queryScope = CoroutineScope(Dispatchers.Default + Job())
 
     post("/api/download") {
 
@@ -26,43 +21,25 @@ fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
 
         log.info { "Starting query" }
 
-        val queryJob = queryHandler.startQuery(request)
-
-        val fileId = UUID.randomUUID().toString()
-        val filename = filename(request)
+        val fileId = queryService.processRequestAsync(request)
 
         log.info { "Pointing client to future file location" }
 
-        fileStore[fileId] = ExcelFile.waiting(filename)
-
         call.response.header(HttpHeaders.Location, "/api/download/$fileId")
         call.respond(HttpStatusCode.Accepted)
-
-        queryScope.launch {
-            fileStore[fileId]!!.workbook = queryJob.await()
-        }
     }
 
     get("/api/download/{fileId}/status") {
-        val excelFile = fileStore[call.fileId()]
-
-        when (excelFile?.isReady) {
-            null -> call.respond(StatusResponse.NotAvailable.name)
-            false -> call.respond(StatusResponse.Pending.name)
-            true -> call.respond(StatusResponse.Complete.name)
-        }
+        call.respond(queryService.fileStatus(call.fileId()))
     }
 
     get("/api/download/{fileId}") {
-        val fileId = call.fileId()
 
-        val excelFile = fileStore[fileId] ?: throw FileNotFoundException(fileId)
+        val excelFile = queryService.releaseFile(call.fileId())
 
         if (!excelFile.isReady) {
             call.respond(HttpStatusCode.Processing)
         } else {
-            fileStore.remove(fileId)
-
             call.response.header(
                 HttpHeaders.ContentDisposition,
                 ContentDisposition.Attachment.withParameter(
@@ -77,41 +54,10 @@ fun Route.varseltekstRoutes(queryHandler: VarselDownloadQueryHandler) {
     }
 }
 
-enum class StatusResponse{
+enum class FileStatus {
     Pending, Complete, NotAvailable;
 }
 
-
-private data class ExcelFile(
-    val filename: String,
-    var workbook: Workbook?,
-) {
-    val isReady: Boolean get() = workbook != null
-
-    companion object {
-
-        fun waiting(filename: String) = ExcelFile(
-            filename = filename,
-            workbook = null,
-        )
-    }
-}
-
-private fun filename(request: DownloadRequest): String {
-    return when {
-        request.filnavn == null -> {
-            val teksttypePart = if (request.teksttyper.size == 1) {
-                request.teksttyper.first().name.lowercase()
-            } else {
-                "kombinasjon"
-            }
-
-            "${LocalDate.now()}-varseltekster-$teksttypePart-${if (request.detaljert) "" else "totalt-"}antall.xlsx"
-        }
-        request.filnavn.endsWith(".xlsx") -> request.filnavn
-        else -> "${request.filnavn}.xlsx"
-    }
-}
 data class DownloadRequest(
     @JsonAlias("teksttyper") private val _teksttyper: List<Teksttype>,
     val detaljert: Boolean = false,
@@ -133,5 +79,3 @@ data class DownloadRequest(
 
 private fun RoutingCall.fileId() = request.pathVariables["fileId"]
     ?: throw IllegalArgumentException("Mangler fileId")
-
-class FileNotFoundException(val fileId: String): IllegalArgumentException()

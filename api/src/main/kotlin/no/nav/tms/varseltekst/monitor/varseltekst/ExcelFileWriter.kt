@@ -1,5 +1,6 @@
 package no.nav.tms.varseltekst.monitor.varseltekst
 
+import no.nav.tms.varseltekst.monitor.varseltekst.Tekst.Innhold.*
 import org.apache.poi.ss.usermodel.CellType
 import org.apache.poi.ss.usermodel.Workbook
 import org.apache.poi.xssf.usermodel.XSSFSheet
@@ -31,7 +32,13 @@ object ExcelFileWriter {
             permutasjon.tekster.forEachIndexed { index, tekst ->
                 row.createCell(1 + index).apply {
                     cellType = CellType.STRING
-                    setCellValue(tekst.tekst ?: "<standardtekst>")
+                    val displayText = when (tekst.innhold) {
+                        Egendefinert -> tekst.tekst!!
+                        Sladdet -> "<sladdet>"
+                        Standard -> "<standardtekst>"
+                        Ubrukt -> "<ingen>"
+                    }
+                    setCellValue(displayText)
                 }
             }
         }
@@ -80,7 +87,13 @@ object ExcelFileWriter {
             permutasjon.tekster.forEachIndexed { index, tekst ->
                 row.createCell(4 + index).apply {
                     cellType = CellType.STRING
-                    setCellValue(tekst.tekst ?: "<standardtekst>")
+                    val displayText = when (tekst.innhold) {
+                        Egendefinert -> tekst.tekst!!
+                        Sladdet -> "<sladdet>"
+                        Standard -> "<standardtekst>"
+                        Ubrukt -> "<ingen>"
+                    }
+                    setCellValue(displayText)
                 }
             }
         }
@@ -90,15 +103,22 @@ object ExcelFileWriter {
 
     private fun sladdDetaljerteTekster(detaljertAntall: DetaljertAntall, minAntall: Int): DetaljertAntall {
 
-        val (beholdes, sladdes) = detaljertAntall.permutasjoner.partition { it.antall >= minAntall || it.tekster.all(Tekst::isStandard) }
+        val (beholdes, sladdes) = detaljertAntall.permutasjoner.partition { permutasjon ->
+            permutasjon.antall >= minAntall
+                || permutasjon.tekster.none {it.innhold == Egendefinert }
+        }
 
         val sladdet = sladdes.map { permutasjon ->
             DetaljertAntall.Permutasjon(
                 varseltype = permutasjon.varseltype,
                 produsent = permutasjon.produsent,
                 antall = permutasjon.antall,
-                tekster = permutasjon.tekster.map {
-                    Tekst(if (it.isStandard) null else "<sladdet>")
+                tekster = permutasjon.tekster.map { tekst ->
+                    if (tekst.innhold == Egendefinert) {
+                        Tekst(null, Sladdet)
+                    } else {
+                        tekst
+                    }
                 }
             )
         }.groupBy {
@@ -120,13 +140,20 @@ object ExcelFileWriter {
 
     private fun sladdTekster(totaltAntall: TotaltAntall, minAntall: Int): TotaltAntall {
 
-        val (beholdes, sladdes) = totaltAntall.permutasjoner.partition { it.antall >= minAntall || it.tekster.all(Tekst::isStandard) }
+        val (beholdes, sladdes) = totaltAntall.permutasjoner.partition {
+            permutasjon -> permutasjon.antall >= minAntall
+                || permutasjon.tekster.none { it.innhold == Egendefinert }
+        }
 
         val sladdet = sladdes.map { permutasjon ->
             TotaltAntall.Permutasjon(
                 antall = permutasjon.antall,
-                tekster = permutasjon.tekster.map {
-                    Tekst(if (it.isStandard) null else "<sladdet>")
+                tekster = permutasjon.tekster.map { tekst ->
+                    if (tekst.innhold == Egendefinert) {
+                        Tekst(null, Sladdet)
+                    } else {
+                        tekst
+                    }
                 }
             )
         }.groupBy {

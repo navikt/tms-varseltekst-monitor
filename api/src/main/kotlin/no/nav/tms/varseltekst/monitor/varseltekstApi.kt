@@ -15,13 +15,13 @@ import io.ktor.server.routing.*
 import no.nav.tms.common.metrics.installTmsApiMetrics
 import no.nav.tms.token.support.azure.validation.azure
 import no.nav.tms.varseltekst.monitor.varseltekst.FileNotFoundException
-import no.nav.tms.varseltekst.monitor.varseltekst.VarselDownloadQueryHandler
+import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstQueryService
 import no.nav.tms.varseltekst.monitor.varseltekst.varseltekstRoutes
 import java.io.File
 import java.text.DateFormat
 
 fun Application.varseltekstMonitor(
-    queryHandler: VarselDownloadQueryHandler,
+    queryHandler: VarseltekstQueryService,
     installAuthenticatorsFunction: Application.() -> Unit = installAuth(),
 ) {
 

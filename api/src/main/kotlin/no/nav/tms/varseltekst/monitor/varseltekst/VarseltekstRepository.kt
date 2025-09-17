@@ -12,10 +12,11 @@ class VarseltekstRepository(private val database: Database) {
         varseltype: String?,
         startDato: LocalDate?,
         sluttDato: LocalDate?,
-        inkluderStandardtekster: Boolean
+        inkluderStandardtekster: Boolean,
+        inkluderUbrukteKanaler: Boolean = false
     ): TotaltAntall {
 
-        val queryHelper = DynamicQueryHelper(teksttyper, inkluderStandardtekster)
+        val queryHelper = DynamicQueryHelper(teksttyper, inkluderStandardtekster, inkluderUbrukteKanaler)
 
         return database.list {
             queryOf(
@@ -55,10 +56,11 @@ class VarseltekstRepository(private val database: Database) {
         varseltype: String?,
         startDato: LocalDate?,
         sluttDato: LocalDate?,
-        inkluderStandardtekster: Boolean
+        inkluderStandardtekster: Boolean,
+        inkluderUbrukteKanaler: Boolean = false
     ): DetaljertAntall {
 
-        val queryHelper = DynamicQueryHelper(teksttyper, inkluderStandardtekster)
+        val queryHelper = DynamicQueryHelper(teksttyper, inkluderStandardtekster, inkluderUbrukteKanaler)
 
         return database.list {
             queryOf("""
@@ -103,27 +105,45 @@ class VarseltekstRepository(private val database: Database) {
 
 private class DynamicQueryHelper(
     val teksttyper: List<Teksttype>,
-    inkluderStandardtekster: Boolean
+    inkluderStandardtekster: Boolean,
+    inkluderUbrukteKanaler: Boolean
 ) {
-    val select = teksttyper.mapIndexed { i, _ -> "tt$i.tekst as tekst_$i" }.joinToString()
+    val select = teksttyper.mapIndexed { i, type ->
+        "tt$i.tekst as tekst_$i, (${type.preferenceColumn} and varsel.${type.columnTableName} is null) as standardtekst_$i"
+    }.joinToString()
 
     val join = teksttyper.mapIndexed { i, teksttype ->
         "left join ${teksttype.columnTableName} as tt$i on varsel.${teksttype.columnTableName} = tt$i.id"
     }.joinToString(" ")
 
     val where = teksttyper.mapIndexed { i, teksttype ->
-        if (inkluderStandardtekster) {
+        if (inkluderStandardtekster && inkluderUbrukteKanaler) {
+            ""
+        } else if (inkluderUbrukteKanaler) {
+            "not ${teksttype.preferenceColumn}"
+        } else if (inkluderStandardtekster) {
             "((${teksttype.preferenceColumn} and varsel.${teksttype.columnTableName} is null) or ${teksttype.columnTableName} is not null)"
         } else {
             "varsel.${teksttype.columnTableName} is not null"
         }
     }.joinToString(" and ")
 
-    val groupBy = teksttyper.mapIndexed { i, _ -> "tekst_$i" }.joinToString()
+    val groupBy = teksttyper.mapIndexed { i, _ -> "tekst_$i, standardtekst_$i" }.joinToString()
 
     fun mapTekster(row: Row): List<Tekst> {
         return teksttyper.mapIndexed { i, _ ->
-            Tekst(row.stringOrNull("tekst_$i"))
+            val tekst = row.stringOrNull("tekst_$i")
+
+            Tekst(
+                tekst = tekst,
+                innhold = if (tekst != null) {
+                    Tekst.Innhold.Egendefinert
+                } else if (row.boolean("standardtekst_$i")){
+                    Tekst.Innhold.Standard
+                } else {
+                    Tekst.Innhold.Ubrukt
+                }
+            )
         }
     }
 }
