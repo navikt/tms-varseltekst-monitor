@@ -12,7 +12,7 @@ import no.nav.tms.varseltekst.monitor.setup.Flyway
 import no.nav.tms.varseltekst.monitor.setup.PostgresDatabase
 import no.nav.tms.varseltekst.monitor.varsel.VarselOpprettetSubscriber
 import no.nav.tms.varseltekst.monitor.varsel.VarselRepository
-import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstQueryService
+import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstQueryProcessor
 import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstRepository
 
 fun main() {
@@ -46,7 +46,7 @@ fun main() {
         coalescingService = coalescingService
     )
 
-    val queryHandler = VarseltekstQueryService(
+    val queryHandler = VarseltekstQueryProcessor(
         VarseltekstRepository(database)
     )
 

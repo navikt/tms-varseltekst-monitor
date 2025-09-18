@@ -15,13 +15,14 @@ import io.ktor.server.routing.*
 import no.nav.tms.common.metrics.installTmsApiMetrics
 import no.nav.tms.token.support.azure.validation.azure
 import no.nav.tms.varseltekst.monitor.varseltekst.FileNotFoundException
-import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstQueryService
+import no.nav.tms.varseltekst.monitor.varseltekst.FileNotReadyException
+import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstQueryProcessor
 import no.nav.tms.varseltekst.monitor.varseltekst.varseltekstRoutes
 import java.io.File
 import java.text.DateFormat
 
 fun Application.varseltekstMonitor(
-    queryHandler: VarseltekstQueryService,
+    queryHandler: VarseltekstQueryProcessor,
     installAuthenticatorsFunction: Application.() -> Unit = installAuth(),
 ) {
 
@@ -44,6 +45,14 @@ fun Application.varseltekstMonitor(
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             when (cause) {
+
+                is FileNotReadyException -> {
+                    call.respondText(
+                        status = HttpStatusCode.BadRequest,
+                        text = "Fil med id [${cause.fileId}] er ikke klar enda"
+                    )
+                    log.warn(cause) { "Fil med id [${cause.fileId}] ble forsøkt hentet før den var klar" }
+                }
 
                 is FileNotFoundException -> {
                     call.respondText(

@@ -7,13 +7,18 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.*
+import org.apache.poi.ss.usermodel.Workbook
 import java.time.LocalDate
 import java.util.*
 import kotlin.math.max
 
-fun Route.varseltekstRoutes(queryService: VarseltekstQueryService) {
+fun Route.varseltekstRoutes(queryService: VarseltekstQueryProcessor) {
 
     val log = KotlinLogging.logger { }
+
+    val fileStore = mutableMapOf<String, ExcelFile>()
+
+    val processorScope = CoroutineScope(Dispatchers.IO + Job())
 
     post("/api/download") {
 
@@ -21,7 +26,16 @@ fun Route.varseltekstRoutes(queryService: VarseltekstQueryService) {
 
         log.info { "Starting query" }
 
-        val fileId = queryService.processRequestAsync(request)
+        val fileId = UUID.randomUUID().toString()
+        val filename = filename(request)
+
+        fileStore[fileId] = ExcelFile.waiting(filename)
+
+        processorScope.launch {
+            queryService.processRequest(request).let { workbook ->
+                fileStore[fileId] = ExcelFile.ready(filename, workbook)
+            }
+        }
 
         log.info { "Pointing client to future file location" }
 
@@ -30,27 +44,41 @@ fun Route.varseltekstRoutes(queryService: VarseltekstQueryService) {
     }
 
     get("/api/download/{fileId}/status") {
-        call.respond(queryService.fileStatus(call.fileId()))
+        val excelFile = fileStore[call.fileId()]
+
+        when (excelFile?.isReady) {
+            null -> FileStatus.NotAvailable
+            false -> FileStatus.Pending
+            true -> FileStatus.Complete
+        }.let {
+            call.respond(it.name)
+        }
     }
 
     get("/api/download/{fileId}") {
 
-        val excelFile = queryService.releaseFile(call.fileId())
+        val fileId = call.fileId()
 
-        if (!excelFile.isReady) {
-            call.respond(HttpStatusCode.Processing)
-        } else {
-            call.response.header(
-                HttpHeaders.ContentDisposition,
-                ContentDisposition.Attachment.withParameter(
-                    ContentDisposition.Parameters.FileName,
-                    excelFile.filename
-                ).toString()
-            )
-            call.respondOutputStream {
-                excelFile.workbook!!.write(this)
-            }
+        val excelFile = fileStore[fileId]
+
+        if (excelFile == null) {
+            throw FileNotFoundException(fileId)
+        } else if (!excelFile.isReady) {
+            throw FileNotReadyException(fileId)
         }
+
+        call.response.header(
+            HttpHeaders.ContentDisposition,
+            ContentDisposition.Attachment.withParameter(
+                ContentDisposition.Parameters.FileName,
+                excelFile.filename
+            ).toString()
+        )
+        call.respondOutputStream {
+            excelFile.workbook!!.write(this)
+        }
+
+        fileStore.remove(fileId)
     }
 }
 
@@ -79,3 +107,39 @@ data class DownloadRequest(
 
 private fun RoutingCall.fileId() = request.pathVariables["fileId"]
     ?: throw IllegalArgumentException("Mangler fileId")
+
+private fun filename(request: DownloadRequest): String {
+    return when {
+        request.filnavn == null -> {
+            val teksttypePart = if (request.teksttyper.size == 1) {
+                request.teksttyper.first().name.lowercase()
+            } else {
+                "kombinasjon"
+            }
+
+            "${LocalDate.now()}-varseltekster-$teksttypePart-${if (request.detaljert) "" else "totalt-"}antall.xlsx"
+        }
+        request.filnavn.endsWith(".xlsx") -> request.filnavn
+        else -> "${request.filnavn}.xlsx"
+    }
+}
+
+private data class ExcelFile(
+    val filename: String,
+    var workbook: Workbook?,
+) {
+    val isReady: Boolean get() = workbook != null
+
+    companion object {
+
+        fun waiting(filename: String) = ExcelFile(
+            filename = filename,
+            workbook = null,
+        )
+
+        fun ready(filename: String, workbook: Workbook) = ExcelFile(
+            filename = filename,
+            workbook = workbook
+        )
+    }
+}
