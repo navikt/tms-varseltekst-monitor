@@ -2,6 +2,7 @@ package no.nav.tms.varseltekst.monitor.varseltekst
 
 import io.kotest.matchers.collections.shouldBeSortedDescendingBy
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import no.nav.tms.varseltekst.monitor.setup.LocalPostgresDatabase
 import no.nav.tms.varseltekst.monitor.setup.clearAllTables
@@ -152,8 +153,21 @@ class TotaltAntallVarseltepositoryTest {
 
         telteAntall.permutasjoner.size shouldBe 2
 
-        telteAntall.permutasjoner.first { it.tekst(0) == "Hallo!" && it.tekst(1) == "SMS!" }.antall shouldBe 15
-        telteAntall.permutasjoner.first { it.tekst(0) == "Hallo!" && it.tekst(1) == null }.antall shouldBe 9
+        telteAntall.permutasjoner[0].let {
+            it.tekster[0].tekst shouldBe "Hallo!"
+            it.tekster[0].innhold shouldBe Tekst.Innhold.Egendefinert
+            it.tekster[1].tekst shouldBe "SMS!"
+            it.tekster[1].innhold shouldBe Tekst.Innhold.Egendefinert
+            it.antall shouldBe 15
+        }
+
+        telteAntall.permutasjoner[1].let {
+            it.tekster[0].tekst shouldBe "Hallo!"
+            it.tekster[0].innhold shouldBe Tekst.Innhold.Egendefinert
+            it.tekster[1].tekst shouldBe null
+            it.tekster[1].innhold shouldBe Tekst.Innhold.Standard
+            it.antall shouldBe 9
+        }
 
         telteAntall.permutasjoner.sumOf { it.antall } shouldBe 24
 
@@ -177,18 +191,117 @@ class TotaltAntallVarseltepositoryTest {
         }
     }
 
+    @Test
+    fun `kan telle kun varsler med ønsket tekst`() {
+        fillDb(10, "WEB!", smsTekst = "SMS!")
+        fillDb(7, "WEB!")
+        fillDb(5, "WEB!", epostTekst = "EPOST")
+
+        tellAntallVarselteksterTotalt(listOf(Teksttype.WebTekst), inkluderUbrukt = false).let {
+            it.permutasjoner.sumOf { it.antall } shouldBe 22
+        }
+
+        tellAntallVarselteksterTotalt(listOf(Teksttype.SmsTekst), inkluderUbrukt = false).let {
+            it.permutasjoner.sumOf { it.antall } shouldBe 10
+        }
+
+        tellAntallVarselteksterTotalt(listOf(Teksttype.WebTekst, Teksttype.SmsTekst), inkluderUbrukt = false).let {
+            it.permutasjoner.sumOf { it.antall } shouldBe 10
+        }
+
+        tellAntallVarselteksterTotalt(listOf(Teksttype.WebTekst, Teksttype.SmsTekst, Teksttype.EpostTekst), inkluderUbrukt = false).let {
+            it.permutasjoner.sumOf { it.antall } shouldBe 0
+        }
+    }
+
+    @Test
+    fun `kan telle alle varsler selv uten ønsket tekst`() {
+        fillDb(10, "WEB!", smsTekst = "SMS!")
+        fillDb(7, "WEB!")
+        fillDb(5, "WEB!", epostTekst = "EPOST")
+
+        tellAntallVarselteksterTotalt(listOf(Teksttype.WebTekst), inkluderUbrukt = true).let {
+            it.permutasjoner.sumOf { it.antall } shouldBe 22
+        }
+
+        tellAntallVarselteksterTotalt(listOf(Teksttype.SmsTekst), inkluderUbrukt = true).let {
+            it.permutasjoner.sumOf { it.antall } shouldBe 22
+            it.permutasjoner.size shouldBe 2
+            it.permutasjoner[0].let { manglende ->
+                manglende.tekster.first().tekst shouldBe null
+                manglende.tekster.first().innhold shouldBe Tekst.Innhold.Ubrukt
+                manglende.antall shouldBe 12
+            }
+            it.permutasjoner[1].let { harSms ->
+                harSms.antall shouldBe 10
+                harSms.tekster.first().tekst shouldBe "SMS!"
+                harSms.tekster.first().innhold shouldBe Tekst.Innhold.Egendefinert
+            }
+        }
+
+        tellAntallVarselteksterTotalt(listOf(Teksttype.WebTekst, Teksttype.SmsTekst), inkluderUbrukt = true).let {
+            it.permutasjoner.sumOf { it.antall } shouldBe 22
+            it.permutasjoner[0].let { kunWeb ->
+                kunWeb.tekster[0].tekst shouldBe "WEB!"
+                kunWeb.tekster[0].innhold shouldBe Tekst.Innhold.Egendefinert
+                kunWeb.tekster[1].tekst shouldBe null
+                kunWeb.tekster[1].innhold shouldBe Tekst.Innhold.Ubrukt
+                kunWeb.antall shouldBe 12
+            }
+            it.permutasjoner[1].let { harSms ->
+                harSms.tekster[0].tekst shouldBe "WEB!"
+                harSms.tekster[0].innhold shouldBe Tekst.Innhold.Egendefinert
+                harSms.tekster[1].tekst shouldBe "SMS!"
+                harSms.tekster[1].innhold shouldBe Tekst.Innhold.Egendefinert
+            }
+        }
+
+        tellAntallVarselteksterTotalt(listOf(Teksttype.WebTekst, Teksttype.SmsTekst, Teksttype.EpostTekst), inkluderUbrukt = true).let {
+            it.permutasjoner.sumOf { it.antall } shouldBe 22
+            it.permutasjoner[0].let { harSms ->
+                harSms.tekster[0].tekst shouldBe "WEB!"
+                harSms.tekster[0].innhold shouldBe Tekst.Innhold.Egendefinert
+                harSms.tekster[1].tekst shouldBe "SMS!"
+                harSms.tekster[1].innhold shouldBe Tekst.Innhold.Egendefinert
+                harSms.tekster[2].tekst shouldBe null
+                harSms.tekster[2].innhold shouldBe Tekst.Innhold.Ubrukt
+                harSms.antall shouldBe 10
+            }
+            it.permutasjoner[1].let { kunWeb ->
+                kunWeb.tekster[0].tekst shouldBe "WEB!"
+                kunWeb.tekster[0].innhold shouldBe Tekst.Innhold.Egendefinert
+                kunWeb.tekster[1].tekst shouldBe null
+                kunWeb.tekster[1].innhold shouldBe Tekst.Innhold.Ubrukt
+                kunWeb.tekster[2].tekst shouldBe null
+                kunWeb.tekster[2].innhold shouldBe Tekst.Innhold.Ubrukt
+                kunWeb.antall shouldBe 7
+            }
+            it.permutasjoner[2].let { harEpost ->
+                harEpost.tekster[0].tekst shouldBe "WEB!"
+                harEpost.tekster[0].innhold shouldBe Tekst.Innhold.Egendefinert
+                harEpost.tekster[1].tekst shouldBe null
+                harEpost.tekster[1].innhold shouldBe Tekst.Innhold.Ubrukt
+                harEpost.tekster[2].tekst shouldBe "EPOST"
+                harEpost.tekster[2].innhold shouldBe Tekst.Innhold.Egendefinert
+                harEpost.antall shouldBe 5
+            }
+        }
+    }
+
     private fun tellAntallVarselteksterTotalt(
         teksttype: Teksttype,
         varseltype: String? = null,
         startDato: LocalDate? = null,
         sluttDato: LocalDate? = null,
-        inkluderStandardtekster: Boolean = false
+        inkluderStandardtekster: Boolean = false,
+        inkluderUbrukteKanaler: Boolean = false
     ) = varseltekstRepository.tellAntallVarselteksterTotalt(
         listOf(teksttype),
         varseltype,
         startDato,
         sluttDato,
-        inkluderStandardtekster
+        inkluderStandardtekster,
+        inkluderUbrukteKanaler
     )
 
     private fun tellAntallVarselteksterTotalt(
@@ -196,13 +309,15 @@ class TotaltAntallVarseltepositoryTest {
         varseltype: String? = null,
         startDato: LocalDate? = null,
         sluttDato: LocalDate? = null,
-        inkluderStandardtekster: Boolean = false
+        inkluderStandardtekster: Boolean = false,
+        inkluderUbrukt: Boolean = false
     ) = varseltekstRepository.tellAntallVarselteksterTotalt(
         teksttyper,
         varseltype,
         startDato,
         sluttDato,
-        inkluderStandardtekster
+        inkluderStandardtekster,
+        inkluderUbrukt
     )
 
     private fun fillDb(

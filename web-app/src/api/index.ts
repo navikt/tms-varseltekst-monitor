@@ -11,6 +11,7 @@ export interface DownloadRequest {
 	startDato: string | null,
 	sluttDato: string | null,
 	inkluderStandardtekster: boolean,
+	inkluderUbrukteKanaler: boolean,
 	minimumAntall: number,
 	filnavn: string | null
 }
@@ -25,6 +26,7 @@ export function sendVarselQuery(request: DownloadRequest): Promise<Response> {
 			startDato: request.startDato,
 			sluttDato: request.sluttDato,
 			inkluderStandardtekster: request.inkluderStandardtekster,
+			inkluderUbrukteKanaler: request.inkluderUbrukteKanaler,
 			minimumAntall: request.minimumAntall,
 			filnavn: request.filnavn
 		}),

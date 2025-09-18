@@ -63,6 +63,7 @@ function ReadFromTopicCard() {
 	const [minAntallField, setMinAntallField] = useState<string>('');
 	const [filenameField, setFilenameField] = useState<string>('');
 	const [standardteksterField, setStandardteksterField] = useState<boolean>(false);
+	const [ubrukteKanalerField, setUbrukteKanalerField] = useState<boolean>(false);
 
 	const fromDatePicker = useDatepicker({
 		onDateChange: (date) => setFromDateField(date || null),
@@ -121,6 +122,7 @@ function ReadFromTopicCard() {
 			startDato: fromDateField?.toISOString() || null,
 			sluttDato: toDateField?.toISOString() || null,
 			inkluderStandardtekster: standardteksterField,
+			inkluderUbrukteKanaler: ubrukteKanalerField,
 			minimumAntall: parseInt(minAntallField, 10),
 			filnavn: filenameField || null
 		};
@@ -152,15 +154,23 @@ function ReadFromTopicCard() {
 			</BodyShort>
 
 			<CheckboxGroup
-				legend="Tekst-typer"
+				legend="Tell tekster i kanaler"
 				onChange={handleTekstType}
 				error={teksttyperError}
 			>
-				<Checkbox value={Teksttype.WEB_TEKST}>Web-tekst (Tekst på min side)</Checkbox>
-				<Checkbox value={Teksttype.SMS_TEKST}>Sms-tekst</Checkbox>
+				<Checkbox value={Teksttype.WEB_TEKST}>Min side (og varselbjella)</Checkbox>
+				<Checkbox value={Teksttype.SMS_TEKST}>Sms</Checkbox>
 				<Checkbox value={Teksttype.EPOST_TITTEL}>Epost-tittel</Checkbox>
 				<Checkbox value={Teksttype.EPOST_TEKST}>Epost-tekst</Checkbox>
 			</CheckboxGroup>
+
+			<Switch checked={ubrukteKanalerField} onChange={(e) => setUbrukteKanalerField(e.target.checked)}>
+				Inkluder varsler uten valgte kanaler
+			</Switch>
+
+			<Switch checked={standardteksterField} onChange={(e) => setStandardteksterField(e.target.checked)}>
+				Inkluder standardtekster
+			</Switch>
 
 			<RadioGroup
 				legend="Tell antall..."
@@ -182,10 +192,6 @@ function ReadFromTopicCard() {
 				<option value={Varseltype.OPPGAVE}>Oppgave</option>
 				<option value={Varseltype.INNBOKS}>Innboks</option>
 			</Select>
-
-			<Switch checked={standardteksterField} onChange={(e) => setStandardteksterField(e.target.checked)}>
-				Inkluder standardtekster
-			</Switch>
 
 			<DatePicker {...fromDatePicker.datepickerProps}>
 				<DatePicker.Input {...fromDatePicker.inputProps} label="Fra og med" />

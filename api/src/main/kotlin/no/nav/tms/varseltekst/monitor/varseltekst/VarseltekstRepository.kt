@@ -13,7 +13,7 @@ class VarseltekstRepository(private val database: Database) {
         startDato: LocalDate?,
         sluttDato: LocalDate?,
         inkluderStandardtekster: Boolean,
-        inkluderUbrukteKanaler: Boolean = false
+        inkluderUbrukteKanaler: Boolean
     ): TotaltAntall {
 
         val queryHelper = DynamicQueryHelper(teksttyper, inkluderStandardtekster, inkluderUbrukteKanaler)
@@ -108,8 +108,8 @@ private class DynamicQueryHelper(
     inkluderStandardtekster: Boolean,
     inkluderUbrukteKanaler: Boolean
 ) {
-    val select = teksttyper.mapIndexed { i, type ->
-        "tt$i.tekst as tekst_$i, (${type.preferenceColumn} and varsel.${type.columnTableName} is null) as standardtekst_$i"
+    val select = teksttyper.mapIndexed { i, teksttype ->
+        "tt$i.tekst as tekst_$i, (${teksttype.preferenceColumn} and varsel.${teksttype.columnTableName} is null) as standardtekst_$i"
     }.joinToString()
 
     val join = teksttyper.mapIndexed { i, teksttype ->
@@ -118,9 +118,9 @@ private class DynamicQueryHelper(
 
     val where = teksttyper.mapIndexed { i, teksttype ->
         if (inkluderStandardtekster && inkluderUbrukteKanaler) {
-            ""
+            "true"
         } else if (inkluderUbrukteKanaler) {
-            "not ${teksttype.preferenceColumn}"
+            "not (${teksttype.preferenceColumn} and varsel.${teksttype.columnTableName} is null)"
         } else if (inkluderStandardtekster) {
             "((${teksttype.preferenceColumn} and varsel.${teksttype.columnTableName} is null) or ${teksttype.columnTableName} is not null)"
         } else {

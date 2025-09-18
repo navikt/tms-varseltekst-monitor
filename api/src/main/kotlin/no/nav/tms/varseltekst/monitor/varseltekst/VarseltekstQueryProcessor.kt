@@ -25,7 +25,8 @@ class VarseltekstQueryProcessor(
                 varseltype = request.varseltype,
                 startDato = request.startDato,
                 sluttDato = request.sluttDato,
-                inkluderStandardtekster = request.inkluderStandardtekster
+                inkluderStandardtekster = request.inkluderStandardtekster,
+                inkluderUbrukteKanaler = request.inkluderUbrukteKanaler
             ).let {
                 sladdTekster(it, request.minimumAntall)
             }.let {
