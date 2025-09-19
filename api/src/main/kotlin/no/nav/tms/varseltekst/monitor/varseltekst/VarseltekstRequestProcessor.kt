@@ -2,7 +2,7 @@ package no.nav.tms.varseltekst.monitor.varseltekst
 
 import org.apache.poi.ss.usermodel.Workbook
 
-class VarseltekstQueryProcessor(
+class VarseltekstRequestProcessor(
     private val varseltekstRepository: VarseltekstRepository
 ) {
 
@@ -98,7 +98,6 @@ class VarseltekstQueryProcessor(
                 tekster = vpt.third
             )
         }
-
 
         return (sladdet + beholdes)
             .sortedByDescending { it.antall }

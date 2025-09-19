@@ -17,6 +17,13 @@ class DetaljertAntall(
     )
 }
 
+enum class Teksttype {
+    WebTekst,
+    SmsTekst,
+    EpostTittel,
+    EpostTekst
+}
+
 class TotaltAntall(
     val teksttyper: List<Teksttype>,
     val permutasjoner: List<Permutasjon>
@@ -32,6 +39,6 @@ data class Tekst(
     val innhold: Innhold
 ) {
     enum class Innhold {
-        Egendefinert, Standard, Ubrukt, Sladdet
+        Egendefinert, Standard, Ingen, Sladdet
     }
 }

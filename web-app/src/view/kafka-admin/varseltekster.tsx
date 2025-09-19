@@ -20,8 +20,6 @@ import {
 	DownloadRequest, sendVarselQuery,
 } from '../../api';
 import './kafka-admin.css';
-import {f} from "msw/lib/glossary-de6278a9";
-import {response} from "msw";
 
 export function Varseltekster() {
 
@@ -48,6 +46,7 @@ enum Varseltype {
 	INNBOKS = 'Innboks',
 }
 
+const INITIAL_INTERVAL_MS: number = 500
 const MAX_INTERVAL_MS: number = 5000
 
 const TEKSTTYPE_ERROR: string = "Du må velge minst én tekst-type"
@@ -82,7 +81,7 @@ function ReadFromTopicCard() {
 		setTeksttyperField(typer)
 	}
 
-	function awaitFile(fileLocation: string, nextInterval: number = 250) {
+	function awaitFile(fileLocation: string, nextInterval: number = INITIAL_INTERVAL_MS) {
 		setTimeout(() => {
 			fetch(`${fileLocation}/status`)
 				.then(response => response.text())
@@ -90,9 +89,14 @@ function ReadFromTopicCard() {
 					if (status == "Pending") {
 						awaitFile(fileLocation, Math.min(nextInterval * 2, MAX_INTERVAL_MS))
 					} else if (status == "Complete") {
+						successToast("Forespørsel er ferdig behandlet. Laster ned fil...")
 						window.open(fileLocation, '_self')
 						setIsLoading(false)
+					} else if (status == "NotAvailable") {
+						warningToast("Fil finnes ikke")
+						setIsLoading(false)
 					} else {
+						warningToast("Forespørsel misslyktes. Kontakt utvikler, eller prøv igjen senere.")
 						setIsLoading(false)
 					}
 				})

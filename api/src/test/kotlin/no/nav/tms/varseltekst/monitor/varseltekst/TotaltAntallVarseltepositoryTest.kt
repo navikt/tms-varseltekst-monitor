@@ -2,7 +2,6 @@ package no.nav.tms.varseltekst.monitor.varseltekst
 
 import io.kotest.matchers.collections.shouldBeSortedDescendingBy
 import io.kotest.matchers.nulls.shouldBeNull
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import no.nav.tms.varseltekst.monitor.setup.LocalPostgresDatabase
 import no.nav.tms.varseltekst.monitor.setup.clearAllTables
@@ -192,7 +191,7 @@ class TotaltAntallVarseltepositoryTest {
     }
 
     @Test
-    fun `kan telle kun varsler med ønsket tekst`() {
+    fun `kan telle kun varsler med valgt tekst`() {
         fillDb(10, "WEB!", smsTekst = "SMS!")
         fillDb(7, "WEB!")
         fillDb(5, "WEB!", epostTekst = "EPOST")
@@ -215,7 +214,7 @@ class TotaltAntallVarseltepositoryTest {
     }
 
     @Test
-    fun `kan telle alle varsler selv uten ønsket tekst`() {
+    fun `kan telle alle varsler selv uten valgt tekst`() {
         fillDb(10, "WEB!", smsTekst = "SMS!")
         fillDb(7, "WEB!")
         fillDb(5, "WEB!", epostTekst = "EPOST")
@@ -229,7 +228,7 @@ class TotaltAntallVarseltepositoryTest {
             it.permutasjoner.size shouldBe 2
             it.permutasjoner[0].let { manglende ->
                 manglende.tekster.first().tekst shouldBe null
-                manglende.tekster.first().innhold shouldBe Tekst.Innhold.Ubrukt
+                manglende.tekster.first().innhold shouldBe Tekst.Innhold.Ingen
                 manglende.antall shouldBe 12
             }
             it.permutasjoner[1].let { harSms ->
@@ -245,7 +244,7 @@ class TotaltAntallVarseltepositoryTest {
                 kunWeb.tekster[0].tekst shouldBe "WEB!"
                 kunWeb.tekster[0].innhold shouldBe Tekst.Innhold.Egendefinert
                 kunWeb.tekster[1].tekst shouldBe null
-                kunWeb.tekster[1].innhold shouldBe Tekst.Innhold.Ubrukt
+                kunWeb.tekster[1].innhold shouldBe Tekst.Innhold.Ingen
                 kunWeb.antall shouldBe 12
             }
             it.permutasjoner[1].let { harSms ->
@@ -264,26 +263,88 @@ class TotaltAntallVarseltepositoryTest {
                 harSms.tekster[1].tekst shouldBe "SMS!"
                 harSms.tekster[1].innhold shouldBe Tekst.Innhold.Egendefinert
                 harSms.tekster[2].tekst shouldBe null
-                harSms.tekster[2].innhold shouldBe Tekst.Innhold.Ubrukt
+                harSms.tekster[2].innhold shouldBe Tekst.Innhold.Ingen
                 harSms.antall shouldBe 10
             }
             it.permutasjoner[1].let { kunWeb ->
                 kunWeb.tekster[0].tekst shouldBe "WEB!"
                 kunWeb.tekster[0].innhold shouldBe Tekst.Innhold.Egendefinert
                 kunWeb.tekster[1].tekst shouldBe null
-                kunWeb.tekster[1].innhold shouldBe Tekst.Innhold.Ubrukt
+                kunWeb.tekster[1].innhold shouldBe Tekst.Innhold.Ingen
                 kunWeb.tekster[2].tekst shouldBe null
-                kunWeb.tekster[2].innhold shouldBe Tekst.Innhold.Ubrukt
+                kunWeb.tekster[2].innhold shouldBe Tekst.Innhold.Ingen
                 kunWeb.antall shouldBe 7
             }
             it.permutasjoner[2].let { harEpost ->
                 harEpost.tekster[0].tekst shouldBe "WEB!"
                 harEpost.tekster[0].innhold shouldBe Tekst.Innhold.Egendefinert
                 harEpost.tekster[1].tekst shouldBe null
-                harEpost.tekster[1].innhold shouldBe Tekst.Innhold.Ubrukt
+                harEpost.tekster[1].innhold shouldBe Tekst.Innhold.Ingen
                 harEpost.tekster[2].tekst shouldBe "EPOST"
                 harEpost.tekster[2].innhold shouldBe Tekst.Innhold.Egendefinert
                 harEpost.antall shouldBe 5
+            }
+        }
+    }
+
+
+
+    @Test
+    fun `kan telle varsler uten valgt tekst og med standardtekst samtidig`() {
+        fillDb(13, "WEB!", smsTekst = "SMS!")
+        fillDb(7, "WEB!")
+        fillDb(5, "WEB!", epostTekst = "EPOST")
+        fillDb(3, "WEB!", smsSendt = true, smsTekst = null)
+
+        tellAntallVarselteksterTotalt(listOf(Teksttype.SmsTekst), inkluderUbrukt = true, inkluderStandardtekster = true).let {
+            it.permutasjoner.sumOf { it.antall } shouldBe 28
+            it.permutasjoner[0].let { egendefinertSms ->
+                egendefinertSms.tekster[0].tekst shouldBe "SMS!"
+                egendefinertSms.tekster[0].innhold shouldBe Tekst.Innhold.Egendefinert
+                egendefinertSms.antall shouldBe 13
+            }
+            it.permutasjoner[1].let { ingenSms ->
+                ingenSms.tekster[0].tekst shouldBe null
+                ingenSms.tekster[0].innhold shouldBe Tekst.Innhold.Ingen
+                ingenSms.antall shouldBe 12
+            }
+            it.permutasjoner[2].let { kunWeb ->
+                kunWeb.tekster[0].tekst shouldBe null
+                kunWeb.tekster[0].innhold shouldBe Tekst.Innhold.Standard
+                kunWeb.antall shouldBe 3
+            }
+        }
+    }
+
+    @Test
+    fun `kan telle varsler uten valgte tekster og med standardtekst samtidig`() {
+        fillDb(13, "WEB!", smsTekst = "SMS!")
+        fillDb(7, "WEB!")
+        fillDb(5, "WEB!", epostTekst = "EPOST")
+        fillDb(3, "WEB!", smsSendt = true, smsTekst = null)
+
+        tellAntallVarselteksterTotalt(listOf(Teksttype.WebTekst, Teksttype.SmsTekst), inkluderUbrukt = true, inkluderStandardtekster = true).let {
+            it.permutasjoner.sumOf { it.antall } shouldBe 28
+            it.permutasjoner[0].let { egendefinertSms ->
+                egendefinertSms.tekster[0].tekst shouldBe "WEB!"
+                egendefinertSms.tekster[0].innhold shouldBe Tekst.Innhold.Egendefinert
+                egendefinertSms.tekster[1].tekst shouldBe "SMS!"
+                egendefinertSms.tekster[1].innhold shouldBe Tekst.Innhold.Egendefinert
+                egendefinertSms.antall shouldBe 13
+            }
+            it.permutasjoner[1].let { ingenSms ->
+                ingenSms.tekster[0].tekst shouldBe "WEB!"
+                ingenSms.tekster[0].innhold shouldBe Tekst.Innhold.Egendefinert
+                ingenSms.tekster[1].tekst shouldBe null
+                ingenSms.tekster[1].innhold shouldBe Tekst.Innhold.Ingen
+                ingenSms.antall shouldBe 12
+            }
+            it.permutasjoner[2].let { kunWeb ->
+                kunWeb.tekster[0].tekst shouldBe "WEB!"
+                kunWeb.tekster[0].innhold shouldBe Tekst.Innhold.Egendefinert
+                kunWeb.tekster[1].tekst shouldBe null
+                kunWeb.tekster[1].innhold shouldBe Tekst.Innhold.Standard
+                kunWeb.antall shouldBe 3
             }
         }
     }

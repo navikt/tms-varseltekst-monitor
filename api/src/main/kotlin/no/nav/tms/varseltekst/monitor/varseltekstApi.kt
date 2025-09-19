@@ -16,13 +16,13 @@ import no.nav.tms.common.metrics.installTmsApiMetrics
 import no.nav.tms.token.support.azure.validation.azure
 import no.nav.tms.varseltekst.monitor.varseltekst.FileNotFoundException
 import no.nav.tms.varseltekst.monitor.varseltekst.FileNotReadyException
-import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstQueryProcessor
+import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstRequestProcessor
 import no.nav.tms.varseltekst.monitor.varseltekst.varseltekstRoutes
 import java.io.File
 import java.text.DateFormat
 
 fun Application.varseltekstMonitor(
-    queryHandler: VarseltekstQueryProcessor,
+    queryHandler: VarseltekstRequestProcessor,
     installAuthenticatorsFunction: Application.() -> Unit = installAuth(),
 ) {
 

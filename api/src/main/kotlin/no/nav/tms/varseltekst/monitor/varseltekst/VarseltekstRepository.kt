@@ -109,22 +109,22 @@ private class DynamicQueryHelper(
     inkluderUbrukteKanaler: Boolean
 ) {
     val select = teksttyper.mapIndexed { i, teksttype ->
-        "tt$i.tekst as tekst_$i, (${teksttype.preferenceColumn} and varsel.${teksttype.columnTableName} is null) as standardtekst_$i"
+        "tt$i.tekst as tekst_$i, (${preferenceColumn(teksttype)} and varsel.${columnTableName(teksttype)} is null) as standardtekst_$i"
     }.joinToString()
 
     val join = teksttyper.mapIndexed { i, teksttype ->
-        "left join ${teksttype.columnTableName} as tt$i on varsel.${teksttype.columnTableName} = tt$i.id"
+        "left join ${columnTableName(teksttype)} as tt$i on varsel.${columnTableName(teksttype)} = tt$i.id"
     }.joinToString(" ")
 
     val where = teksttyper.mapIndexed { i, teksttype ->
         if (inkluderStandardtekster && inkluderUbrukteKanaler) {
             "true"
         } else if (inkluderUbrukteKanaler) {
-            "not (${teksttype.preferenceColumn} and varsel.${teksttype.columnTableName} is null)"
+            "not (${preferenceColumn(teksttype)} and varsel.${columnTableName(teksttype)} is null)"
         } else if (inkluderStandardtekster) {
-            "((${teksttype.preferenceColumn} and varsel.${teksttype.columnTableName} is null) or ${teksttype.columnTableName} is not null)"
+            "((${preferenceColumn(teksttype)} and varsel.${columnTableName(teksttype)} is null) or ${columnTableName(teksttype)} is not null)"
         } else {
-            "varsel.${teksttype.columnTableName} is not null"
+            "varsel.${columnTableName(teksttype)} is not null"
         }
     }.joinToString(" and ")
 
@@ -141,24 +141,24 @@ private class DynamicQueryHelper(
                 } else if (row.boolean("standardtekst_$i")){
                     Tekst.Innhold.Standard
                 } else {
-                    Tekst.Innhold.Ubrukt
+                    Tekst.Innhold.Ingen
                 }
             )
         }
     }
-}
 
-enum class Teksttype(val columnTableName: String, val preferenceColumn: String) {
-    WebTekst("web_tekst", "false"),
-    SmsTekst("sms_tekst", "sms_preferert"),
-    EpostTittel("epost_tittel", "epost_preferert"),
-    EpostTekst("epost_tekst", "epost_preferert");
+    private fun columnTableName(teksttype: Teksttype) = when(teksttype) {
+        Teksttype.WebTekst -> "web_tekst"
+        Teksttype.SmsTekst -> "sms_tekst"
+        Teksttype.EpostTittel -> "epost_tittel"
+        Teksttype.EpostTekst -> "epost_tekst"
+    }
 
-    companion object {
-        fun parse(string: String): Teksttype {
-            return entries
-                .firstOrNull { it.name.lowercase() == string.lowercase() }
-                ?: throw IllegalArgumentException("Fant ikke teksttype for verdi $string")
-        }
+    private fun preferenceColumn(teksttype: Teksttype) = when(teksttype) {
+        Teksttype.WebTekst -> "false"
+        Teksttype.SmsTekst -> "sms_preferert"
+        Teksttype.EpostTittel -> "epost_preferert"
+        Teksttype.EpostTekst -> "epost_preferert"
     }
 }
+

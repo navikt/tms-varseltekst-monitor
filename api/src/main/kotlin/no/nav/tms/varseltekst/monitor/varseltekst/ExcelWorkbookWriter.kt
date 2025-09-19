@@ -32,7 +32,7 @@ object ExcelWorkbookWriter {
                         Egendefinert -> tekst.tekst!!
                         Sladdet -> "<sladdet>"
                         Standard -> "<standardtekst>"
-                        Ubrukt -> "<ingen>"
+                        Ingen -> "<ingen>"
                     }
                     setCellValue(displayText)
                 }
@@ -83,7 +83,7 @@ object ExcelWorkbookWriter {
                         Egendefinert -> tekst.tekst!!
                         Sladdet -> "<sladdet>"
                         Standard -> "<standardtekst>"
-                        Ubrukt -> "<ingen>"
+                        Ingen -> "<ingen>"
                     }
                     setCellValue(displayText)
                 }
