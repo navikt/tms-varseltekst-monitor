@@ -149,7 +149,7 @@ function ReadFromTopicCard() {
 	// @ts-ignore
 	return (
 		<Card
-			title="Statistikk for varseltekster"
+			title="Statistikk for varseltekster (Beta)"
 			className="varseltekster-card very-large-card center-horizontal"
 			innholdClassName="card__content"
 		>
@@ -158,7 +158,7 @@ function ReadFromTopicCard() {
 			</BodyShort>
 
 			<CheckboxGroup
-				legend="Tell tekster i kanaler"
+				legend="Tell tekster i kanaler:"
 				onChange={handleTekstType}
 				error={teksttyperError}
 			>
