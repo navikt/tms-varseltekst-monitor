@@ -132,7 +132,7 @@ function ReadFromTopicCard() {
 
 		if (harEksternVarslingField === EksternVarslingFilter.INGEN) {
 			harEksternVarsling = null
-		} else if (EksternVarslingFilter.TELL_BARE_MED) {
+		} else if (harEksternVarslingField === EksternVarslingFilter.TELL_BARE_MED) {
 			harEksternVarsling = true
 		} else {
 			harEksternVarsling = false

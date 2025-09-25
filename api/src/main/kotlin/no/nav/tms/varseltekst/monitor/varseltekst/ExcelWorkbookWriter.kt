@@ -1,8 +1,7 @@
 package no.nav.tms.varseltekst.monitor.varseltekst
 
 import no.nav.tms.varseltekst.monitor.varseltekst.Tekst.Innhold.*
-import org.apache.poi.ss.usermodel.CellType
-import org.apache.poi.ss.usermodel.Workbook
+import org.apache.poi.ss.usermodel.*
 import org.apache.poi.xssf.usermodel.XSSFSheet
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
@@ -14,19 +13,19 @@ object ExcelWorkbookWriter {
         val (workbook, sheet) = initWorkbook("Antall", teksttyper = totaltAntall.teksttyper)
 
         totaltAntall.teksttyper.forEachIndexed { index, _ ->
-            sheet.setColumnWidth(2 + index, 25000)
+            sheet.setColumnWidth(1 + index, 25000)
         }
 
         totaltAntall.permutasjoner.forEachIndexed { i, permutasjon ->
             val row = sheet.createRow(i + 1)
 
-            row.createCell(1).apply {
+            row.createCell(0).apply {
                 cellType = CellType.NUMERIC
                 setCellValue(permutasjon.antall.toDouble())
             }
 
             permutasjon.tekster.forEachIndexed { index, tekst ->
-                row.createCell(2 + index).apply {
+                row.createCell(1 + index).apply {
                     cellType = CellType.STRING
                     val displayText = when (tekst.innhold) {
                         Egendefinert -> tekst.tekst!!
@@ -39,8 +38,14 @@ object ExcelWorkbookWriter {
             }
         }
 
-        sheet.createRow(totaltAntall.permutasjoner.size + 1).let { sumRow ->
-            val sumSyle = workbook.createCellStyle().also { style ->
+        sheet.createRow(totaltAntall.permutasjoner.size + 2).let { sumRow ->
+            val sumStyle = workbook.createCellStyle().also { style ->
+                style.setBorderBottom(BorderStyle.THIN)
+                style.setBorderTop(BorderStyle.THIN)
+                style.setBorderRight(BorderStyle.THIN)
+                style.setBorderLeft(BorderStyle.THIN)
+                style.fillForegroundColor = IndexedColors.LIGHT_GREEN.index
+                style.fillPattern = FillPatternType.SOLID_FOREGROUND
                 workbook.createFont().also {
                     it.bold = true
                 }.let {
@@ -49,11 +54,7 @@ object ExcelWorkbookWriter {
             }
 
             sumRow.createCell(0).apply {
-                cellStyle = sumSyle
-                setCellValue("Sum")
-            }
-
-            sumRow.createCell(1).apply {
+                cellStyle = sumStyle
                 cellType = CellType.NUMERIC
                 totaltAntall.permutasjoner
                     .sumOf { it.antall }
@@ -78,28 +79,28 @@ object ExcelWorkbookWriter {
         detaljertAntall.permutasjoner.forEachIndexed { i, permutasjon ->
             val row = sheet.createRow(i + 1)
 
-            row.createCell(1).apply {
+            row.createCell(0).apply {
                 cellType = CellType.NUMERIC
                 setCellValue(permutasjon.antall.toDouble())
             }
 
-            row.createCell(2).apply {
+            row.createCell(1).apply {
                 cellType = CellType.STRING
                 setCellValue(permutasjon.varseltype)
             }
 
-            row.createCell(3).apply {
+            row.createCell(2).apply {
                 cellType = CellType.STRING
                 setCellValue(permutasjon.produsent.namespace)
             }
 
-            row.createCell(4).apply {
+            row.createCell(3).apply {
                 cellType = CellType.STRING
                 setCellValue(permutasjon.produsent.appnavn)
             }
 
             permutasjon.tekster.forEachIndexed { index, tekst ->
-                row.createCell(5 + index).apply {
+                row.createCell(4 + index).apply {
                     cellType = CellType.STRING
                     val displayText = when (tekst.innhold) {
                         Egendefinert -> tekst.tekst!!
@@ -112,8 +113,14 @@ object ExcelWorkbookWriter {
             }
         }
 
-        sheet.createRow(detaljertAntall.permutasjoner.size + 1).let { sumRow ->
-            val sumSyle = workbook.createCellStyle().also { style ->
+        sheet.createRow(detaljertAntall.permutasjoner.size + 2).let { sumRow ->
+            val sumStyle = workbook.createCellStyle().also { style ->
+                style.setBorderBottom(BorderStyle.THIN)
+                style.setBorderTop(BorderStyle.THIN)
+                style.setBorderRight(BorderStyle.THIN)
+                style.setBorderLeft(BorderStyle.THIN)
+                style.fillForegroundColor = IndexedColors.LIGHT_GREEN.index
+                style.fillPattern = FillPatternType.SOLID_FOREGROUND
                 workbook.createFont().also {
                     it.bold = true
                 }.let {
@@ -122,16 +129,13 @@ object ExcelWorkbookWriter {
             }
 
             sumRow.createCell(0).apply {
-                cellStyle = sumSyle
-                setCellValue("Sum")
-            }
-
-            sumRow.createCell(1).apply {
+                cellStyle = sumStyle
                 cellType = CellType.NUMERIC
                 detaljertAntall.permutasjoner
                     .sumOf { it.antall }
                     .let { setCellValue(it.toDouble()) }
             }
+
         }
 
         return workbook
@@ -159,14 +163,14 @@ object ExcelWorkbookWriter {
         }
 
         columns.forEachIndexed { i, column ->
-            header.createCell(i + 1).apply {
+            header.createCell(i).apply {
                 cellStyle = headerStyle
                 setCellValue(column)
             }
         }
 
         teksttyper.forEachIndexed { i, teksttype ->
-            header.createCell(i + columns.size + 1).apply {
+            header.createCell(i + columns.size).apply {
                 cellStyle = headerStyle
                 setCellValue(teksttype.name)
             }
