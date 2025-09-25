@@ -208,12 +208,12 @@ function ReadFromTopicCard() {
 
 			<Select
 				label="Filtrer på ekstern varsling"
-				value={varseltypeField}
+				value={harEksternVarslingField}
 				onChange={e => setHarEksternVarsling(e.target.value as EksternVarslingFilter || EksternVarslingFilter.INGEN)}
 			>
 				<option value={EksternVarslingFilter.INGEN}>Ikke filtrer</option>
-				<option value={EksternVarslingFilter.TELL_BARE_MED}>Bare varsler med ekstern varsling</option>
-				<option value={EksternVarslingFilter.TELL_BARE_UTEN}>Bare varsler uten ekstern varsling</option>
+				<option value={EksternVarslingFilter.TELL_BARE_MED}>Tell kun varsler med Epost/SMS</option>
+				<option value={EksternVarslingFilter.TELL_BARE_UTEN}>Tell kun varsler uten Epost/SMS</option>
 			</Select>
 
 			<Select
