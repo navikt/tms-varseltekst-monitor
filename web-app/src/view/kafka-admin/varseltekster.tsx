@@ -14,7 +14,9 @@ import {
 	useDatepicker,
 	Checkbox,
 	CheckboxGroup,
-    Switch
+	Switch,
+	Heading,
+	ToggleGroup, Label
 } from '@navikt/ds-react';
 import {
 	DownloadRequest, sendVarselQuery,
@@ -57,6 +59,7 @@ function ReadFromTopicCard() {
 	const [teksttyperError, setTeksttyperError] = useState<string>();
 	const [varseltypeField, setVarseltypeField] = useState<Varseltype>(Varseltype.ALLE);
 	const [detaljertField, setDetaljertField] = useState<boolean>(false);
+	const [harEksternVarslingField, setHarEksternVarsling] = useState<boolean | null>(null);
 	const [fromDateField, setFromDateField] = useState<Date | null>(null);
 	const [toDateField, setToDateField] = useState<Date | null>(null);
 	const [minAntallField, setMinAntallField] = useState<string>('');
@@ -125,6 +128,7 @@ function ReadFromTopicCard() {
 			varseltype: varseltype,
 			startDato: fromDateField?.toISOString() || null,
 			sluttDato: toDateField?.toISOString() || null,
+			harEksternVarsling: harEksternVarslingField,
 			inkluderStandardtekster: standardteksterField,
 			inkluderUbrukteKanaler: ubrukteKanalerField,
 			minimumAntall: parseInt(minAntallField, 10),
@@ -157,6 +161,8 @@ function ReadFromTopicCard() {
 				Hent utrekk av hvilke varseltekster som sendes ut, og i hvilket antall
 			</BodyShort>
 
+			<Heading size="medium">Ønsket innhold</Heading>
+
 			<CheckboxGroup
 				legend="Tell tekster i kanaler:"
 				onChange={handleTekstType}
@@ -186,6 +192,19 @@ function ReadFromTopicCard() {
 				<Radio value={true}>Fordelt på varseltype og produsent</Radio>
 			</RadioGroup>
 
+			<Heading size="medium">Filtrer varsler på...</Heading>
+
+			<RadioGroup
+				legend="Ekstern varsling"
+				onChange={(value: boolean) => setHarEksternVarsling(value)}
+				defaultValue={null}
+				required
+			>
+				<Radio value={null}>Tell alle varsler</Radio>
+				<Radio value={true}>Med ekstern varsling</Radio>
+				<Radio value={false}>Uten ekstern varsling</Radio>
+			</RadioGroup>
+
 			<Select
 				label="Varseltype"
 				value={varseltypeField}
@@ -196,6 +215,8 @@ function ReadFromTopicCard() {
 				<option value={Varseltype.OPPGAVE}>Oppgave</option>
 				<option value={Varseltype.INNBOKS}>Innboks</option>
 			</Select>
+
+			<Label>Tid sendt</Label>
 
 			<DatePicker {...fromDatePicker.datepickerProps}>
 				<DatePicker.Input {...fromDatePicker.inputProps} label="Fra og med" />

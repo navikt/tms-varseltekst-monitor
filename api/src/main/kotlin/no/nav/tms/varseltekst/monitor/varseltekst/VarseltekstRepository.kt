@@ -12,6 +12,7 @@ class VarseltekstRepository(private val database: Database) {
         varseltype: String?,
         startDato: LocalDate?,
         sluttDato: LocalDate?,
+        harEksternVarsling: Boolean?,
         inkluderStandardtekster: Boolean,
         inkluderUbrukteKanaler: Boolean
     ): TotaltAntall {
@@ -28,16 +29,18 @@ class VarseltekstRepository(private val database: Database) {
                     varsel ${ queryHelper.join }
                 where
                     ${ queryHelper.where }
+                    ${ if (varseltype != null) "and varsel.event_type = :varseltype " else "" }
                     ${ if (startDato != null) "and varsel.varseltidspunkt > :startDato " else "" }
                     ${ if (sluttDato != null) "and varsel.varseltidspunkt < :sluttDato " else "" }
-                    ${ if (varseltype != null) "and varsel.event_type = :varseltype " else "" }
+                    ${ if (harEksternVarsling != null) "and varsel.eksternVarsling = :eksternVarsling " else "" }
                 group by ${ queryHelper.groupBy }
                 order by antall desc
             """,
                 mapOf(
                     "startDato" to startDato,
                     "sluttDato" to sluttDato,
-                    "varseltype" to varseltype
+                    "varseltype" to varseltype,
+                    "eksternVarsling" to harEksternVarsling
                 )
             )
                 .map {
@@ -56,6 +59,7 @@ class VarseltekstRepository(private val database: Database) {
         varseltype: String?,
         startDato: LocalDate?,
         sluttDato: LocalDate?,
+        harEksternVarsling: Boolean?,
         inkluderStandardtekster: Boolean,
         inkluderUbrukteKanaler: Boolean = false
     ): DetaljertAntall {
@@ -74,16 +78,18 @@ class VarseltekstRepository(private val database: Database) {
                     varsel ${ queryHelper.join }
                 where
                     ${ queryHelper.where }
+                    ${ if (varseltype != null) "and varsel.event_type = :varseltype " else "" }
                     ${ if (startDato != null) "and varsel.varseltidspunkt > :startDato " else "" }
                     ${ if (sluttDato != null) "and varsel.varseltidspunkt < :sluttDato " else "" }
-                    ${ if (varseltype != null) "and varsel.event_type = :varseltype " else "" }
+                    ${ if (harEksternVarsling != null) "and varsel.eksternVarsling = :eksternVarsling " else "" }
                 group by ${queryHelper.groupBy}, varseltype, namespace, appnavn
                 order by antall desc
             """,
                 mapOf(
                     "startDato" to startDato,
                     "sluttDato" to sluttDato,
-                    "varseltype" to varseltype
+                    "varseltype" to varseltype,
+                    "eksternVarsling" to harEksternVarsling
                 )
             )
                 .map {

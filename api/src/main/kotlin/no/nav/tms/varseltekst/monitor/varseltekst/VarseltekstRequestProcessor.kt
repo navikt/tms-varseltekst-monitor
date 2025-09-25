@@ -13,7 +13,8 @@ class VarseltekstRequestProcessor(
                 varseltype = request.varseltype,
                 startDato = request.startDato,
                 sluttDato = request.sluttDato,
-                inkluderStandardtekster = request.inkluderStandardtekster
+                inkluderStandardtekster = request.inkluderStandardtekster,
+                harEksternVarsling = request.harEksternVarsling
             ).let {
                 sladdDetaljerteTekster(it, request.minimumAntall)
             }.let {
@@ -26,7 +27,8 @@ class VarseltekstRequestProcessor(
                 startDato = request.startDato,
                 sluttDato = request.sluttDato,
                 inkluderStandardtekster = request.inkluderStandardtekster,
-                inkluderUbrukteKanaler = request.inkluderUbrukteKanaler
+                inkluderUbrukteKanaler = request.inkluderUbrukteKanaler,
+                harEksternVarsling = request.harEksternVarsling
             ).let {
                 sladdTekster(it, request.minimumAntall)
             }.let {

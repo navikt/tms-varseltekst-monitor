@@ -97,6 +97,7 @@ data class DownloadRequest(
     val varseltype: String? = null,
     val startDato: LocalDate? = null,
     val sluttDato: LocalDate? = null,
+    val harEksternVarsling: Boolean? = null,
     val inkluderStandardtekster: Boolean = false,
     val inkluderUbrukteKanaler: Boolean = false,
     @JsonAlias("minimumAntall") private val _minimumAntall: Int = 100,

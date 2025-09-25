@@ -440,20 +440,41 @@ class AntallVarselRepositoryTest {
         }
     }
 
+    @Test
+    fun `kan telle varsler med og uten ekstern varsling`() {
+        fillDb(13, "WEB!")
+        fillDb(7, "WEB!", smsSendt = true)
+        fillDb(5, "WEB!", epostSendt = true)
+
+        tellAntallVarseltekster(listOf(Teksttype.WebTekst), harEksternVarsling = null).let {
+            it.permutasjoner.sumOf { it.antall } shouldBe 25
+        }
+
+        tellAntallVarseltekster(listOf(Teksttype.WebTekst), harEksternVarsling = true).let {
+            it.permutasjoner.sumOf { it.antall } shouldBe 12
+        }
+
+        tellAntallVarseltekster(listOf(Teksttype.WebTekst), harEksternVarsling = false).let {
+            it.permutasjoner.sumOf { it.antall } shouldBe 13
+        }
+    }
+
     fun tellAntallVarseltekster(
         teksttype: Teksttype,
         varseltype: String? = null,
         startDato: LocalDate? = null,
         sluttDato: LocalDate? = null,
+        harEksternVarsling: Boolean? = null,
         inkluderStandardtekster: Boolean = false,
         inkluderUbrukt: Boolean = false
     ) = varseltekstRepository.tellAntallVarseltekster(
-        listOf(teksttype),
-        varseltype,
-        startDato,
-        sluttDato,
-        inkluderStandardtekster,
-        inkluderUbrukt
+        teksttyper = listOf(teksttype),
+        varseltype = varseltype,
+        startDato = startDato,
+        sluttDato = sluttDato,
+        harEksternVarsling = harEksternVarsling,
+        inkluderStandardtekster = inkluderStandardtekster,
+        inkluderUbrukteKanaler = inkluderUbrukt
     )
 
     fun tellAntallVarseltekster(
@@ -461,15 +482,17 @@ class AntallVarselRepositoryTest {
         varseltype: String? = null,
         startDato: LocalDate? = null,
         sluttDato: LocalDate? = null,
+        harEksternVarsling: Boolean? = null,
         inkluderStandardtekster: Boolean = false,
         inkluderUbrukt: Boolean = false
     ) = varseltekstRepository.tellAntallVarseltekster(
-        teksttyper,
-        varseltype,
-        startDato,
-        sluttDato,
-        inkluderStandardtekster,
-        inkluderUbrukt
+        teksttyper = teksttyper,
+        varseltype = varseltype,
+        startDato = startDato,
+        sluttDato = sluttDato,
+        harEksternVarsling = harEksternVarsling,
+        inkluderStandardtekster = inkluderStandardtekster,
+        inkluderUbrukteKanaler = inkluderUbrukt
     )
 
     private fun DetaljertAntall.Permutasjon.tekst(): String? {

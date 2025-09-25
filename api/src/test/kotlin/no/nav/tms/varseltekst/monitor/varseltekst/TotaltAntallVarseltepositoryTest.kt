@@ -349,20 +349,41 @@ class TotaltAntallVarseltepositoryTest {
         }
     }
 
+    @Test
+    fun `kan telle varsler med og uten ekstern varsling`() {
+        fillDb(13, "WEB!")
+        fillDb(7, "WEB!", smsSendt = true)
+        fillDb(5, "WEB!", epostSendt = true)
+
+        tellAntallVarselteksterTotalt(listOf(Teksttype.WebTekst), harEksternVarsling = null).let {
+            it.permutasjoner.sumOf { it.antall } shouldBe 25
+        }
+
+        tellAntallVarselteksterTotalt(listOf(Teksttype.WebTekst), harEksternVarsling = true).let {
+            it.permutasjoner.sumOf { it.antall } shouldBe 12
+        }
+
+        tellAntallVarselteksterTotalt(listOf(Teksttype.WebTekst), harEksternVarsling = false).let {
+            it.permutasjoner.sumOf { it.antall } shouldBe 13
+        }
+    }
+
     private fun tellAntallVarselteksterTotalt(
         teksttype: Teksttype,
         varseltype: String? = null,
         startDato: LocalDate? = null,
         sluttDato: LocalDate? = null,
+        harEksternVarsling: Boolean? = null,
         inkluderStandardtekster: Boolean = false,
         inkluderUbrukteKanaler: Boolean = false
     ) = varseltekstRepository.tellAntallVarselteksterTotalt(
-        listOf(teksttype),
-        varseltype,
-        startDato,
-        sluttDato,
-        inkluderStandardtekster,
-        inkluderUbrukteKanaler
+        teksttyper = listOf(teksttype),
+        varseltype = varseltype,
+        startDato = startDato,
+        sluttDato = sluttDato,
+        harEksternVarsling = harEksternVarsling,
+        inkluderStandardtekster = inkluderStandardtekster,
+        inkluderUbrukteKanaler = inkluderUbrukteKanaler
     )
 
     private fun tellAntallVarselteksterTotalt(
@@ -370,15 +391,17 @@ class TotaltAntallVarseltepositoryTest {
         varseltype: String? = null,
         startDato: LocalDate? = null,
         sluttDato: LocalDate? = null,
+        harEksternVarsling: Boolean? = null,
         inkluderStandardtekster: Boolean = false,
         inkluderUbrukt: Boolean = false
     ) = varseltekstRepository.tellAntallVarselteksterTotalt(
-        teksttyper,
-        varseltype,
-        startDato,
-        sluttDato,
-        inkluderStandardtekster,
-        inkluderUbrukt
+        teksttyper = teksttyper,
+        varseltype = varseltype,
+        startDato = startDato,
+        sluttDato = sluttDato,
+        harEksternVarsling = harEksternVarsling,
+        inkluderStandardtekster = inkluderStandardtekster,
+        inkluderUbrukteKanaler = inkluderUbrukt
     )
 
     private fun fillDb(
