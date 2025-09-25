@@ -161,7 +161,7 @@ function ReadFromTopicCard() {
 				Hent utrekk av hvilke varseltekster som sendes ut, og i hvilket antall
 			</BodyShort>
 
-			<Heading size="medium">Ønsket innhold</Heading>
+			<Heading className="header" size="medium">Ønsket innhold</Heading>
 
 			<CheckboxGroup
 				legend="Tell tekster i kanaler:"
@@ -192,7 +192,7 @@ function ReadFromTopicCard() {
 				<Radio value={true}>Fordelt på varseltype og produsent</Radio>
 			</RadioGroup>
 
-			<Heading size="medium">Filtrer varsler på...</Heading>
+			<Heading className="header" size="medium">Filtrer varsler på...</Heading>
 
 			<RadioGroup
 				legend="Ekstern varsling"

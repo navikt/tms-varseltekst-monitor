@@ -14,19 +14,19 @@ object ExcelWorkbookWriter {
         val (workbook, sheet) = initWorkbook("Antall", teksttyper = totaltAntall.teksttyper)
 
         totaltAntall.teksttyper.forEachIndexed { index, _ ->
-            sheet.setColumnWidth(1 + index, 25000)
+            sheet.setColumnWidth(2 + index, 25000)
         }
 
         totaltAntall.permutasjoner.forEachIndexed { i, permutasjon ->
             val row = sheet.createRow(i + 1)
 
-            row.createCell(0).apply {
+            row.createCell(1).apply {
                 cellType = CellType.NUMERIC
                 setCellValue(permutasjon.antall.toDouble())
             }
 
             permutasjon.tekster.forEachIndexed { index, tekst ->
-                row.createCell(1 + index).apply {
+                row.createCell(2 + index).apply {
                     cellType = CellType.STRING
                     val displayText = when (tekst.innhold) {
                         Egendefinert -> tekst.tekst!!
@@ -36,6 +36,28 @@ object ExcelWorkbookWriter {
                     }
                     setCellValue(displayText)
                 }
+            }
+        }
+
+        sheet.createRow(totaltAntall.permutasjoner.size + 2).let { sumRow ->
+            val sumSyle = workbook.createCellStyle().also { style ->
+                workbook.createFont().also {
+                    it.bold = true
+                }.let {
+                    style.setFont(it)
+                }
+            }
+
+            sumRow.createCell(0).apply {
+                cellStyle = sumSyle
+                setCellValue("Sum")
+            }
+
+            sumRow.createCell(0).apply {
+                cellType = CellType.NUMERIC
+                totaltAntall.permutasjoner
+                    .sumOf { it.antall }
+                    .let { setCellValue(it.toDouble()) }
             }
         }
 
@@ -46,38 +68,38 @@ object ExcelWorkbookWriter {
 
         val (workbook, sheet) = initWorkbook("Antall", "Varseltype", "Namespace", "Appnavn", teksttyper = detaljertAntall.teksttyper)
 
-        sheet.setColumnWidth(2, 3000)
-        sheet.setColumnWidth(3, 5000)
+        sheet.setColumnWidth(3, 3000)
+        sheet.setColumnWidth(4, 5000)
 
         detaljertAntall.teksttyper.forEachIndexed { index, _ ->
-            sheet.setColumnWidth(4 + index, 25000)
+            sheet.setColumnWidth(5 + index, 25000)
         }
 
         detaljertAntall.permutasjoner.forEachIndexed { i, permutasjon ->
             val row = sheet.createRow(i + 1)
 
-            row.createCell(0).apply {
+            row.createCell(1).apply {
                 cellType = CellType.NUMERIC
                 setCellValue(permutasjon.antall.toDouble())
             }
 
-            row.createCell(1).apply {
+            row.createCell(2).apply {
                 cellType = CellType.STRING
                 setCellValue(permutasjon.varseltype)
             }
 
-            row.createCell(2).apply {
+            row.createCell(3).apply {
                 cellType = CellType.STRING
                 setCellValue(permutasjon.produsent.namespace)
             }
 
-            row.createCell(3).apply {
+            row.createCell(4).apply {
                 cellType = CellType.STRING
                 setCellValue(permutasjon.produsent.appnavn)
             }
 
             permutasjon.tekster.forEachIndexed { index, tekst ->
-                row.createCell(4 + index).apply {
+                row.createCell(5 + index).apply {
                     cellType = CellType.STRING
                     val displayText = when (tekst.innhold) {
                         Egendefinert -> tekst.tekst!!
@@ -87,6 +109,28 @@ object ExcelWorkbookWriter {
                     }
                     setCellValue(displayText)
                 }
+            }
+        }
+
+        sheet.createRow(detaljertAntall.permutasjoner.size + 2).let { sumRow ->
+            val sumSyle = workbook.createCellStyle().also { style ->
+                workbook.createFont().also {
+                    it.bold = true
+                }.let {
+                    style.setFont(it)
+                }
+            }
+
+            sumRow.createCell(0).apply {
+                cellStyle = sumSyle
+                setCellValue("Sum")
+            }
+
+            sumRow.createCell(0).apply {
+                cellType = CellType.NUMERIC
+                detaljertAntall.permutasjoner
+                    .sumOf { it.antall }
+                    .let { setCellValue(it.toDouble()) }
             }
         }
 
@@ -115,14 +159,14 @@ object ExcelWorkbookWriter {
         }
 
         columns.forEachIndexed { i, column ->
-            header.createCell(i).apply {
+            header.createCell(i + 1).apply {
                 cellStyle = headerStyle
                 setCellValue(column)
             }
         }
 
         teksttyper.forEachIndexed { i, teksttype ->
-            header.createCell(i + columns.size).apply {
+            header.createCell(i + columns.size + 1).apply {
                 cellStyle = headerStyle
                 setCellValue(teksttype.name)
             }
