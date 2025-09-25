@@ -39,7 +39,7 @@ object ExcelWorkbookWriter {
             }
         }
 
-        sheet.createRow(totaltAntall.permutasjoner.size + 2).let { sumRow ->
+        sheet.createRow(totaltAntall.permutasjoner.size + 1).let { sumRow ->
             val sumSyle = workbook.createCellStyle().also { style ->
                 workbook.createFont().also {
                     it.bold = true
@@ -53,7 +53,7 @@ object ExcelWorkbookWriter {
                 setCellValue("Sum")
             }
 
-            sumRow.createCell(0).apply {
+            sumRow.createCell(1).apply {
                 cellType = CellType.NUMERIC
                 totaltAntall.permutasjoner
                     .sumOf { it.antall }
@@ -112,7 +112,7 @@ object ExcelWorkbookWriter {
             }
         }
 
-        sheet.createRow(detaljertAntall.permutasjoner.size + 2).let { sumRow ->
+        sheet.createRow(detaljertAntall.permutasjoner.size + 1).let { sumRow ->
             val sumSyle = workbook.createCellStyle().also { style ->
                 workbook.createFont().also {
                     it.bold = true
@@ -126,7 +126,7 @@ object ExcelWorkbookWriter {
                 setCellValue("Sum")
             }
 
-            sumRow.createCell(0).apply {
+            sumRow.createCell(1).apply {
                 cellType = CellType.NUMERIC
                 detaljertAntall.permutasjoner
                     .sumOf { it.antall }

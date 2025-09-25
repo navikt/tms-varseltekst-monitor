@@ -48,6 +48,12 @@ enum Varseltype {
 	INNBOKS = 'Innboks',
 }
 
+enum EksternVarslingFilter {
+	INGEN ,
+	TELL_BARE_MED = 'true',
+	TELL_BARE_UTEN = 'false',
+}
+
 const INITIAL_INTERVAL_MS: number = 500
 const MAX_INTERVAL_MS: number = 5000
 
@@ -59,7 +65,7 @@ function ReadFromTopicCard() {
 	const [teksttyperError, setTeksttyperError] = useState<string>();
 	const [varseltypeField, setVarseltypeField] = useState<Varseltype>(Varseltype.ALLE);
 	const [detaljertField, setDetaljertField] = useState<boolean>(false);
-	const [harEksternVarslingField, setHarEksternVarsling] = useState<boolean | null>(null);
+	const [harEksternVarslingField, setHarEksternVarsling] = useState<EksternVarslingFilter>(EksternVarslingFilter.INGEN);
 	const [fromDateField, setFromDateField] = useState<Date | null>(null);
 	const [toDateField, setToDateField] = useState<Date | null>(null);
 	const [minAntallField, setMinAntallField] = useState<string>('');
@@ -122,13 +128,23 @@ function ReadFromTopicCard() {
 			varseltype = varseltypeField
 		}
 
+		let harEksternVarsling: boolean | null;
+
+		if (harEksternVarslingField === EksternVarslingFilter.INGEN) {
+			harEksternVarsling = null
+		} else if (EksternVarslingFilter.TELL_BARE_MED) {
+			harEksternVarsling = true
+		} else {
+			harEksternVarsling = false
+		}
+
 		const request: DownloadRequest = {
 			teksttyper: teksttyperField,
 			detaljert: detaljertField,
 			varseltype: varseltype,
 			startDato: fromDateField?.toISOString() || null,
 			sluttDato: toDateField?.toISOString() || null,
-			harEksternVarsling: harEksternVarslingField,
+			harEksternVarsling: harEksternVarsling,
 			inkluderStandardtekster: standardteksterField,
 			inkluderUbrukteKanaler: ubrukteKanalerField,
 			minimumAntall: parseInt(minAntallField, 10),
@@ -161,8 +177,6 @@ function ReadFromTopicCard() {
 				Hent utrekk av hvilke varseltekster som sendes ut, og i hvilket antall
 			</BodyShort>
 
-			<Heading className="header" size="medium">Ønsket innhold</Heading>
-
 			<CheckboxGroup
 				legend="Tell tekster i kanaler:"
 				onChange={handleTekstType}
@@ -192,21 +206,18 @@ function ReadFromTopicCard() {
 				<Radio value={true}>Fordelt på varseltype og produsent</Radio>
 			</RadioGroup>
 
-			<Heading className="header" size="medium">Filtrer varsler på...</Heading>
-
-			<RadioGroup
-				legend="Ekstern varsling"
-				onChange={(value: boolean) => setHarEksternVarsling(value)}
-				defaultValue={null}
-				required
+			<Select
+				label="Filtrer på ekstern varsling"
+				value={varseltypeField}
+				onChange={e => setHarEksternVarsling(e.target.value as EksternVarslingFilter || EksternVarslingFilter.INGEN)}
 			>
-				<Radio value={null}>Tell alle varsler</Radio>
-				<Radio value={true}>Med ekstern varsling</Radio>
-				<Radio value={false}>Uten ekstern varsling</Radio>
-			</RadioGroup>
+				<option value={EksternVarslingFilter.INGEN}>Ikke filtrer</option>
+				<option value={EksternVarslingFilter.TELL_BARE_MED}>Bare varsler med ekstern varsling</option>
+				<option value={EksternVarslingFilter.TELL_BARE_UTEN}>Bare varsler uten ekstern varsling</option>
+			</Select>
 
 			<Select
-				label="Varseltype"
+				label="Tell varseltype"
 				value={varseltypeField}
 				onChange={e => setVarseltypeField(e.target.value as Varseltype || Varseltype.ALLE)}
 			>
@@ -215,8 +226,6 @@ function ReadFromTopicCard() {
 				<option value={Varseltype.OPPGAVE}>Oppgave</option>
 				<option value={Varseltype.INNBOKS}>Innboks</option>
 			</Select>
-
-			<Label>Tid sendt</Label>
 
 			<DatePicker {...fromDatePicker.datepickerProps}>
 				<DatePicker.Input {...fromDatePicker.inputProps} label="Fra og med" />
