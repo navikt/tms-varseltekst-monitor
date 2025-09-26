@@ -1,6 +1,5 @@
 package no.nav.tms.varseltekst.monitor.varsel
 
-import java.time.LocalDateTime
 import java.time.ZonedDateTime
 
 fun varselJson(

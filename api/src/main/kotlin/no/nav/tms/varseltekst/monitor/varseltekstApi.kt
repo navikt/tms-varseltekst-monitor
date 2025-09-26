@@ -2,27 +2,27 @@ package no.nav.tms.varseltekst.monitor
 
 import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import io.ktor.http.HttpStatusCode
-import io.ktor.serialization.jackson.jackson
-import io.ktor.server.application.Application
-import io.ktor.server.application.install
-import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.server.response.respond
-import io.ktor.server.response.respondText
-import io.ktor.server.routing.routing
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.http.*
+import io.ktor.serialization.jackson.*
+import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.http.content.*
+import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import no.nav.tms.common.metrics.installTmsApiMetrics
 import no.nav.tms.token.support.azure.validation.azure
-import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstRepository
+import no.nav.tms.varseltekst.monitor.varseltekst.FileNotFoundException
+import no.nav.tms.varseltekst.monitor.varseltekst.FileNotReadyException
+import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstRequestProcessor
 import no.nav.tms.varseltekst.monitor.varseltekst.varseltekstRoutes
 import java.io.File
 import java.text.DateFormat
 
 fun Application.varseltekstMonitor(
-    varseltekstRepository: VarseltekstRepository,
+    queryHandler: VarseltekstRequestProcessor,
     installAuthenticatorsFunction: Application.() -> Unit = installAuth(),
 ) {
 
@@ -46,6 +46,22 @@ fun Application.varseltekstMonitor(
         exception<Throwable> { call, cause ->
             when (cause) {
 
+                is FileNotReadyException -> {
+                    call.respondText(
+                        status = HttpStatusCode.BadRequest,
+                        text = "Fil med id [${cause.fileId}] er ikke klar enda"
+                    )
+                    log.warn(cause) { "Fil med id [${cause.fileId}] ble forsøkt hentet før den var klar" }
+                }
+
+                is FileNotFoundException -> {
+                    call.respondText(
+                        status = HttpStatusCode.NotFound,
+                        text = "Fil med id [${cause.fileId}] finnes ikke, eller er allerede hentet"
+                    )
+                    log.warn(cause) { "Fil med id [${cause.fileId}] finnes ikke, eller er allerede hentet" }
+                }
+
                 is IllegalArgumentException -> {
                     call.respondText(
                         status = HttpStatusCode.BadRequest,
@@ -64,7 +80,7 @@ fun Application.varseltekstMonitor(
 
 
     routing {
-        varseltekstRoutes(varseltekstRepository)
+        varseltekstRoutes(queryHandler)
         staticFiles("/", File("public")) {
             preCompressed(CompressedFileType.GZIP)
         }

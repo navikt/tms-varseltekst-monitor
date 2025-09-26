@@ -8,11 +8,11 @@ import { Header } from './component/header/header';
 function App() {
 	return (
 		<div className="app tms-varseltekst-monitor">
-			<Header />
+			<Header/>
 			<main>
-				<Varseltekster />
+				<Varseltekster/>
 			</main>
-			<ToastContainer />
+			<ToastContainer/>
 		</div>
 	);
 }

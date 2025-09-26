@@ -14,15 +14,14 @@ import {
 	useDatepicker,
 	Checkbox,
 	CheckboxGroup,
-    Switch
+	Switch,
+	Heading,
+	ToggleGroup, Label
 } from '@navikt/ds-react';
 import {
-	DownloadRequest, requestDownload,
+	DownloadRequest, sendVarselQuery,
 } from '../../api';
 import './kafka-admin.css';
-import { toTimerStr } from '../../utils/date-utils';
-import {response} from "msw";
-import {number} from "prop-types";
 
 export function Varseltekster() {
 
@@ -49,17 +48,30 @@ enum Varseltype {
 	INNBOKS = 'Innboks',
 }
 
+enum EksternVarslingFilter {
+	INGEN ,
+	TELL_BARE_MED = 'true',
+	TELL_BARE_UTEN = 'false',
+}
+
+const INITIAL_INTERVAL_MS: number = 500
+const MAX_INTERVAL_MS: number = 5000
+
+const TEKSTTYPE_ERROR: string = "Du må velge minst én tekst-type"
 
 function ReadFromTopicCard() {
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [teksttypeField, setTeksttypeField] = useState<Teksttype>(Teksttype.WEB_TEKST);
+	const [teksttyperField, setTeksttyperField] = useState<string[]>([]);
+	const [teksttyperError, setTeksttyperError] = useState<string>();
 	const [varseltypeField, setVarseltypeField] = useState<Varseltype>(Varseltype.ALLE);
 	const [detaljertField, setDetaljertField] = useState<boolean>(false);
+	const [harEksternVarslingField, setHarEksternVarsling] = useState<EksternVarslingFilter>(EksternVarslingFilter.INGEN);
 	const [fromDateField, setFromDateField] = useState<Date | null>(null);
 	const [toDateField, setToDateField] = useState<Date | null>(null);
 	const [minAntallField, setMinAntallField] = useState<string>('');
 	const [filenameField, setFilenameField] = useState<string>('');
 	const [standardteksterField, setStandardteksterField] = useState<boolean>(false);
+	const [ubrukteKanalerField, setUbrukteKanalerField] = useState<boolean>(false);
 
 	const fromDatePicker = useDatepicker({
 		onDateChange: (date) => setFromDateField(date || null),
@@ -69,7 +81,43 @@ function ReadFromTopicCard() {
 		onDateChange: (date) => setToDateField(date || null),
 	})
 
-	async function handleDownload() {
+	const handleTekstType = (typer: string[]) => {
+		if (typer.length == 0) {
+			setTeksttyperError(TEKSTTYPE_ERROR)
+		} else {
+			setTeksttyperError("")
+		}
+		setTeksttyperField(typer)
+	}
+
+	function awaitFile(fileLocation: string, nextInterval: number = INITIAL_INTERVAL_MS) {
+		setTimeout(() => {
+			fetch(`${fileLocation}/status`)
+				.then(response => response.text())
+				.then(status => {
+					if (status == "Pending") {
+						awaitFile(fileLocation, Math.min(nextInterval * 2, MAX_INTERVAL_MS))
+					} else if (status == "Complete") {
+						successToast("Forespørsel er ferdig behandlet. Laster ned fil...")
+						window.open(fileLocation, '_self')
+						setIsLoading(false)
+					} else if (status == "NotAvailable") {
+						warningToast("Fil finnes ikke")
+						setIsLoading(false)
+					} else {
+						warningToast("Forespørsel misslyktes. Kontakt utvikler, eller prøv igjen senere.")
+						setIsLoading(false)
+					}
+				})
+		}, nextInterval)
+	}
+
+	async function handleDownloadQuery() {
+		if (teksttyperField.length == 0) {
+			setTeksttyperError(TEKSTTYPE_ERROR)
+			return
+		}
+
 		setIsLoading(true);
 
 		let varseltype: string | null;
@@ -80,30 +128,48 @@ function ReadFromTopicCard() {
 			varseltype = varseltypeField
 		}
 
+		let harEksternVarsling: boolean | null;
+
+		if (harEksternVarslingField === EksternVarslingFilter.INGEN) {
+			harEksternVarsling = null
+		} else if (harEksternVarslingField === EksternVarslingFilter.TELL_BARE_MED) {
+			harEksternVarsling = true
+		} else {
+			harEksternVarsling = false
+		}
+
 		const request: DownloadRequest = {
-			teksttype: teksttypeField,
+			teksttyper: teksttyperField,
 			detaljert: detaljertField,
 			varseltype: varseltype,
 			startDato: fromDateField?.toISOString() || null,
 			sluttDato: toDateField?.toISOString() || null,
+			harEksternVarsling: harEksternVarsling,
 			inkluderStandardtekster: standardteksterField,
+			inkluderUbrukteKanaler: ubrukteKanalerField,
 			minimumAntall: parseInt(minAntallField, 10),
-			filnavn: filenameField || null,
+			filnavn: filenameField || null
 		};
 
-		requestDownload(request)
-			.then(response => response.headers.get('Location')!!)
-			.then(fileLink => window.open(fileLink, '_self'))
-			.catch(() => errorToast('Klarte ikke laste ned varseltekster'))
-			.finally(() => {
-				setIsLoading(false);
-			});
+		sendVarselQuery(request)
+			.then(response => {
+				if (response.status == 202) {
+					const fileLocation = response.headers.get('Location')!!
+					awaitFile(fileLocation)
+				} else {
+					setIsLoading(false)
+				}
+			})
+			.catch(() => {
+				errorToast('Klarte ikke laste ned varseltekster')
+				setIsLoading(false)
+			})
 	}
 
 	// @ts-ignore
 	return (
 		<Card
-			title="Statistikk for varseltekster"
+			title="Statistikk for varseltekster (Beta)"
 			className="varseltekster-card very-large-card center-horizontal"
 			innholdClassName="card__content"
 		>
@@ -111,16 +177,24 @@ function ReadFromTopicCard() {
 				Hent utrekk av hvilke varseltekster som sendes ut, og i hvilket antall
 			</BodyShort>
 
-			<Select
-				label="Tekst-type"
-				value={teksttypeField}
-				onChange={e => setTeksttypeField(e.target.value as Teksttype)}
+			<CheckboxGroup
+				legend="Tell tekster i kanaler:"
+				onChange={handleTekstType}
+				error={teksttyperError}
 			>
-				<option value={Teksttype.WEB_TEKST}>Web-tekst (Tekst på min side)</option>
-				<option value={Teksttype.SMS_TEKST}>Sms-tekst</option>
-				<option value={Teksttype.EPOST_TITTEL}>Epost-tittel</option>
-				<option value={Teksttype.EPOST_TEKST}>Epost-tekst</option>
-			</Select>
+				<Checkbox value={Teksttype.WEB_TEKST}>Min side (og varselbjella)</Checkbox>
+				<Checkbox value={Teksttype.SMS_TEKST}>Sms</Checkbox>
+				<Checkbox value={Teksttype.EPOST_TITTEL}>Epost-tittel</Checkbox>
+				<Checkbox value={Teksttype.EPOST_TEKST}>Epost-tekst</Checkbox>
+			</CheckboxGroup>
+
+			<Switch checked={ubrukteKanalerField} onChange={(e) => setUbrukteKanalerField(e.target.checked)}>
+				Inkluder varsler uten valgte kanaler
+			</Switch>
+
+			<Switch checked={standardteksterField} onChange={(e) => setStandardteksterField(e.target.checked)}>
+				Inkluder standardtekster
+			</Switch>
 
 			<RadioGroup
 				legend="Tell antall..."
@@ -133,7 +207,17 @@ function ReadFromTopicCard() {
 			</RadioGroup>
 
 			<Select
-				label="Varseltype"
+				label="Filtrer på ekstern varsling"
+				value={harEksternVarslingField}
+				onChange={e => setHarEksternVarsling(e.target.value as EksternVarslingFilter || EksternVarslingFilter.INGEN)}
+			>
+				<option value={EksternVarslingFilter.INGEN}>Ikke filtrer</option>
+				<option value={EksternVarslingFilter.TELL_BARE_MED}>Tell kun varsler med Epost/SMS</option>
+				<option value={EksternVarslingFilter.TELL_BARE_UTEN}>Tell kun varsler uten Epost/SMS</option>
+			</Select>
+
+			<Select
+				label="Tell varseltype"
 				value={varseltypeField}
 				onChange={e => setVarseltypeField(e.target.value as Varseltype || Varseltype.ALLE)}
 			>
@@ -142,10 +226,6 @@ function ReadFromTopicCard() {
 				<option value={Varseltype.OPPGAVE}>Oppgave</option>
 				<option value={Varseltype.INNBOKS}>Innboks</option>
 			</Select>
-
-			<Switch checked={standardteksterField} onChange={(e) => setStandardteksterField(e.target.checked)}>
-				Inkluder standardtekster
-			</Switch>
 
 			<DatePicker {...fromDatePicker.datepickerProps}>
 				<DatePicker.Input {...fromDatePicker.inputProps} label="Fra og med" />
@@ -169,7 +249,7 @@ function ReadFromTopicCard() {
 			/>
 
 			{!isLoading ? (
-				<Button id="fetch" onClick={handleDownload} variant="tertiary">
+				<Button id="fetch" onClick={handleDownloadQuery} variant="tertiary">
 					Last ned
 				</Button>
 			) : null}

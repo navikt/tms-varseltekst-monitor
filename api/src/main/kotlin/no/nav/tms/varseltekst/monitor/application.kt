@@ -6,9 +6,13 @@ import no.nav.tms.varseltekst.monitor.coalesce.CoalescingBacklogJob
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingRepository
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingService
 import no.nav.tms.varseltekst.monitor.coalesce.rules.*
-import no.nav.tms.varseltekst.monitor.setup.*
+import no.nav.tms.varseltekst.monitor.setup.Database
+import no.nav.tms.varseltekst.monitor.setup.Environment
+import no.nav.tms.varseltekst.monitor.setup.Flyway
+import no.nav.tms.varseltekst.monitor.setup.PostgresDatabase
 import no.nav.tms.varseltekst.monitor.varsel.VarselOpprettetSubscriber
 import no.nav.tms.varseltekst.monitor.varsel.VarselRepository
+import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstRequestProcessor
 import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstRepository
 
 fun main() {
@@ -42,10 +46,14 @@ fun main() {
         coalescingService = coalescingService
     )
 
+    val queryHandler = VarseltekstRequestProcessor(
+        VarseltekstRepository(database)
+    )
+
     KafkaApplication.build {
         ktorModule {
             varseltekstMonitor(
-                varseltekstRepository = VarseltekstRepository(database)
+                queryHandler = queryHandler
             )
         }
 
@@ -58,9 +66,12 @@ fun main() {
             VarselOpprettetSubscriber(coalescingService, VarselRepository(database))
         )
 
-        onReady {
+        onStartup {
             Flyway.runFlywayMigrations(environment)
             coalescingService.initialize()
+        }
+
+        onReady {
             coalescingBacklogJob.start()
         }
     }.start()

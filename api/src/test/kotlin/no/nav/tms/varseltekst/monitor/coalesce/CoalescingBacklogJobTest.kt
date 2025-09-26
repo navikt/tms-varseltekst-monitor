@@ -6,7 +6,6 @@ import kotlinx.coroutines.runBlocking
 import kotliquery.queryOf
 import no.nav.tms.varseltekst.monitor.coalesce.rules.*
 import no.nav.tms.varseltekst.monitor.setup.*
-import no.nav.tms.varseltekst.monitor.setup.Database
 import no.nav.tms.varseltekst.monitor.varsel.TestVarsel
 import no.nav.tms.varseltekst.monitor.varsel.VarselOversikt
 import no.nav.tms.varseltekst.monitor.varsel.VarselRepository
