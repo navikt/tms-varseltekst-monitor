@@ -19,9 +19,9 @@ object ArbeidsmarkedtiltakRule2: CoalescingRule {
 
     override fun applyRule(text: String): String {
         return when(text) {
-            in soktInn -> text.replace(soktInn, soktInnReplacement)
-            in faattPlass -> text.replace(faattPlass, faattPlassReplacement)
-            in mottattUtkast -> text.replace(mottattUtkast, mottattUtkastReplacement)
+            in soktInn -> soktInnReplacement
+            in faattPlass -> faattPlassReplacement
+            in mottattUtkast -> mottattUtkastReplacement
             else -> text
         }
     }
