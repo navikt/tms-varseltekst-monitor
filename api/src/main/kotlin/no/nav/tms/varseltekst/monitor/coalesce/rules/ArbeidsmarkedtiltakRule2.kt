@@ -1,7 +1,7 @@
 package no.nav.tms.varseltekst.monitor.coalesce.rules
 
-object ArbeidsmarkedtiltakRuleExt: CoalescingRule {
-    override val description = "Melding om arbedsmarkettiltak - tiltak hos arbeidssted"
+object ArbeidsmarkedtiltakRule2: CoalescingRule {
+    override val description = "Melding om arbedsmarkettiltak - tiltak hos arbeidssted. Utvidet."
 
     private val soktInn = "Du er søkt inn på arbeidsmarkedstiltaket .*".toRegex()
     private val faattPlass = "Du har fått plass på arbeidsmarkedstiltaket: .*".toRegex()
