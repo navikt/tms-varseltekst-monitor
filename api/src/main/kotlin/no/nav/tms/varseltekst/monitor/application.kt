@@ -24,13 +24,18 @@ fun main() {
 
     val coalesingRules = listOf(
         ArbeidsmarkedtiltakRule,
+        ArbeidsmarkedtiltakRule2,
+        ArbeidsmarkedtiltakRule3,
         DayOfWeekDateTimeRule,
         DokumentTittelGjelderRule,
         DokumentTittelRule,
         FullmaktNavnRule,
+        FullmaktNavnRule2,
         InntektsmeldingRule,
         KontonummerEndretTidspunktRule,
+        StillingHosArbeidsstedRule,
         SykefravaerOrgRule,
+        SykepengerStatusRule,
         UtvidetSykepengerRule
     )
 
