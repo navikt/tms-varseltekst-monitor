@@ -32,6 +32,10 @@ spec:
         - /metrics
   secureLogs:
     enabled: true
+  observability:
+    autoInstrumentation:
+      enabled: true
+      runtime: java
   replicas:
     min: 1
     max: 1
