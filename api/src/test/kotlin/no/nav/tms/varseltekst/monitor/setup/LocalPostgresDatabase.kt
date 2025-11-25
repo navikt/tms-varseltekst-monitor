@@ -3,8 +3,8 @@ package no.nav.tms.varseltekst.monitor.setup
 import com.zaxxer.hikari.HikariDataSource
 import kotliquery.queryOf
 import org.flywaydb.core.Flyway
-import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.postgresql.PostgreSQLContainer
 
 class LocalPostgresDatabase private constructor() : Database {
 
