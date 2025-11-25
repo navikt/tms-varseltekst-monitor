@@ -92,7 +92,7 @@ enum class FileStatus {
 }
 
 data class DownloadRequest(
-    @JsonAlias("teksttyper") private val _teksttyper: List<Teksttype>,
+    @param:JsonAlias("teksttyper") private val _teksttyper: List<Teksttype>,
     val detaljert: Boolean = false,
     val varseltype: String? = null,
     val startDato: LocalDate? = null,
@@ -100,7 +100,7 @@ data class DownloadRequest(
     val harEksternVarsling: Boolean? = null,
     val inkluderStandardtekster: Boolean = false,
     val inkluderUbrukteKanaler: Boolean = false,
-    @JsonAlias("minimumAntall") private val _minimumAntall: Int = 100,
+    @param:JsonAlias("minimumAntall") private val _minimumAntall: Int = 100,
     val filnavn: String? = null
 ) {
     val teksttyper = if (_teksttyper.isNotEmpty()) {
