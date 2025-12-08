@@ -81,7 +81,7 @@ fun Application.varseltekstMonitor(
 
     routing {
         varseltekstRoutes(queryHandler)
-        staticFiles("/", File("public")) {
+        staticFiles("/", File("app/public")) {
             preCompressed(CompressedFileType.GZIP)
         }
     }
