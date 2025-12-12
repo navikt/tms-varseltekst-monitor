@@ -30,8 +30,11 @@ spec:
       autoLogin: true
       autoLoginIgnorePaths:
         - /metrics
-  secureLogs:
-    enabled: true
+  accessPolicy:
+    outbound:
+      rules:
+        - application: logging
+          namespace: nais-system
   observability:
     autoInstrumentation:
       enabled: true

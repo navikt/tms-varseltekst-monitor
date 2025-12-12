@@ -2,6 +2,7 @@ package no.nav.tms.varseltekst.monitor.varsel
 
 import com.fasterxml.jackson.module.kotlin.treeToValue
 import io.github.oshai.kotlinlogging.KotlinLogging
+import no.nav.tms.common.logging.TeamLogs
 import no.nav.tms.kafka.application.JsonMessage
 import no.nav.tms.kafka.application.Subscriber
 import no.nav.tms.kafka.application.Subscription
@@ -16,7 +17,7 @@ class VarselOpprettetSubscriber(
 ) : Subscriber() {
 
     private val log = KotlinLogging.logger {}
-    private val secureLog = KotlinLogging.logger("secureLog")
+    private val teamLog = TeamLogs.logger { }
 
     private val objectMapper = defaultDeserializer()
 
@@ -60,7 +61,7 @@ class VarselOpprettetSubscriber(
             if (it.isCoalesced) {
                 val rules = it.rulesApplied.map { rule -> rule.name }.joinToString(", ")
                 log.info { "Lagrer varsel med modifisert tekst etter regler [$rules]" }
-                secureLog.info { "Lagrer varsel modifisert tekst { original: \"${it.originalTekst}\", final: \"${it.finalTekst}\" } etter regler [$rules]" }
+                teamLog.info { "Lagrer varsel modifisert tekst { original: \"${it.originalTekst}\", final: \"${it.finalTekst}\" } etter regler [$rules]" }
             }
         }
         .finalTekst

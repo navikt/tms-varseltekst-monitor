@@ -15,8 +15,6 @@ spec:
   prometheus:
     enabled: true
     path: /metrics
-  secureLogs:
-    enabled: true
   observability:
     autoInstrumentation:
       enabled: true
@@ -61,6 +59,11 @@ spec:
     sidecar:
       enabled: true
       autoLogin: true
+  accessPolicy:
+    outbound:
+      rules:
+        - application: logging
+          namespace: nais-system
   kafka:
     pool: nav-dev
   env:
