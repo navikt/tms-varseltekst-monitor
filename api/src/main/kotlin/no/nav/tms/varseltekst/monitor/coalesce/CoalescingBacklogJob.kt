@@ -1,6 +1,7 @@
 package no.nav.tms.varseltekst.monitor.coalesce
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import no.nav.tms.common.logging.TeamLogs
 import no.nav.tms.common.util.scheduling.PeriodicJob
 import java.time.Duration
 import kotlin.time.measureTime
@@ -13,7 +14,7 @@ class CoalescingBacklogJob(
 ): PeriodicJob(Duration.ofMillis(10)) {
 
     private val log = KotlinLogging.logger {}
-    private val secureLog = KotlinLogging.logger("secureLog")
+    private val teamLog = TeamLogs.logger { }
 
     override val job = initializeJob {
         processCoalescingBacklog()
@@ -42,10 +43,10 @@ class CoalescingBacklogJob(
             if (coalescingResult.isCoalesced) {
                 coalescingRepository.updateTekst(backlogEntry.ruleId, varselTekst, coalescingResult.finalTekst)
                 log.info { "Vasket data i tabell [${backlogEntry.tekstTable}] med id [${backlogEntry.tekstId}] etter regel med id [${backlogEntry.ruleId}]" }
-                secureLog.info { "Vasket data med tekst \"${varselTekst.tekst}\" etter regel med id [${backlogEntry.ruleId}], resultalt: \"${coalescingResult.finalTekst}\"." }
+                teamLog.info { "Vasket data med tekst \"${varselTekst.tekst}\" etter regel med id [${backlogEntry.ruleId}], resultalt: \"${coalescingResult.finalTekst}\"." }
             } else {
                 log.info { "Ingen endringer gjort for tekst med id [${varselTekst.id}]" }
-                secureLog.info { "Ingen endringer gjort for tekst \"${varselTekst.tekst}\"]" }
+                teamLog.info { "Ingen endringer gjort for tekst \"${varselTekst.tekst}\"]" }
             }
 
             coalescingRepository.deleteBacklogEntry(backlogEntry.id)
