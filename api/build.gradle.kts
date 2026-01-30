@@ -43,6 +43,7 @@ dependencies {
     implementation(Postgresql.postgresql)
     implementation(TmsCommonLib.utils)
     implementation(TmsCommonLib.metrics)
+    implementation(TmsCommonLib.postgres)
     implementation(TmsCommonLib.teamLogger)
     implementation(TmsKafkaTools.kafkaApplication)
     implementation(TmsKtorTokenSupport.azureValidation)

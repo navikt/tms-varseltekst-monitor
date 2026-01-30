@@ -15,7 +15,7 @@ import java.time.LocalDateTime
 import java.util.*
 
 class TotaltAntallVarseltepositoryTest {
-    private val database = LocalPostgresDatabase.migratedDb()
+    private val database = LocalPostgresDatabase.cleanDb()
 
     private val varselRepository = VarselRepository(database)
     private val varseltekstRepository = VarseltekstRepository(database)

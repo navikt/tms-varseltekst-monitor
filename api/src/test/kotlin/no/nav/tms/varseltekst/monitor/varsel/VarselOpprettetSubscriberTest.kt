@@ -16,7 +16,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 
 internal class VarselOpprettetSubscriberTest {
-    private val database = LocalPostgresDatabase.migratedDb()
+    private val database = LocalPostgresDatabase.cleanDb()
 
     private val varselRepository = VarselRepository(database)
     private val coalescingRepository = CoalescingRepository(database)

@@ -3,18 +3,18 @@ package no.nav.tms.varseltekst.monitor.coalesce
 import kotliquery.Row
 import kotliquery.TransactionalSession
 import kotliquery.queryOf
+import no.nav.tms.common.postgres.PostgresDatabase
 import no.nav.tms.varseltekst.monitor.coalesce.rules.RuleDto
-import no.nav.tms.varseltekst.monitor.setup.Database
 import no.nav.tms.varseltekst.monitor.util.LocalDateTimeHelper.nowAtUtc
 import no.nav.tms.varseltekst.monitor.util.singleInTx
 import no.nav.tms.varseltekst.monitor.util.singleOrNullInTx
+import no.nav.tms.varseltekst.monitor.util.transaction
 import no.nav.tms.varseltekst.monitor.util.updateInTx
 
-class CoalescingRepository(val database: Database) {
+class CoalescingRepository(val database: PostgresDatabase) {
     fun getCoalescingRules(): List<RuleDto> = database.list {
         queryOf("SELECT * FROM coalescing_rule")
             .map(toRuleDto())
-            .asList
     }
 
     fun updateTekst(ruleId: Int, oldTekst: VarselTekst, newTekst: String) = database.transaction {
@@ -39,7 +39,6 @@ class CoalescingRepository(val database: Database) {
             mapOf("tekstId" to id)
         )
             .map(toVarselTekst(table))
-            .asSingle
     }
 
     private fun toRuleDto(): (Row) -> RuleDto = { row ->

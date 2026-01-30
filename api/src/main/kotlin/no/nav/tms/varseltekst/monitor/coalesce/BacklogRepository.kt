@@ -3,13 +3,14 @@ package no.nav.tms.varseltekst.monitor.coalesce
 import kotliquery.Row
 import kotliquery.TransactionalSession
 import kotliquery.queryOf
+import no.nav.tms.common.postgres.PostgresDatabase
 import no.nav.tms.varseltekst.monitor.coalesce.rules.CoalescingRule
-import no.nav.tms.varseltekst.monitor.setup.Database
 import no.nav.tms.varseltekst.monitor.util.LocalDateTimeHelper.nowAtUtc
+import no.nav.tms.varseltekst.monitor.util.transaction
 import no.nav.tms.varseltekst.monitor.util.updateInTx
 
 
-class BacklogRepository(private val database: Database) {
+class BacklogRepository(private val database: PostgresDatabase) {
     fun persistRulesAndBacklog(rules: List<CoalescingRule>) = database.transaction {
         insertCoalescingRules(rules)
 
@@ -27,7 +28,6 @@ class BacklogRepository(private val database: Database) {
             mapOf("batch" to batchSize)
         )
             .map(toBacklogEntry())
-            .asList
     }
 
     private fun TransactionalSession.insertCoalescingRules(rules: List<CoalescingRule>) {
