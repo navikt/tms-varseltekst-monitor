@@ -2,10 +2,10 @@ package no.nav.tms.varseltekst.monitor.varseltekst
 
 import kotliquery.Row
 import kotliquery.queryOf
-import no.nav.tms.varseltekst.monitor.setup.Database
+import no.nav.tms.common.postgres.PostgresDatabase
 import java.time.LocalDate
 
-class VarseltekstRepository(private val database: Database) {
+class VarseltekstRepository(private val database: PostgresDatabase) {
 
     fun tellAntallVarselteksterTotalt(
         teksttyper: List<Teksttype>,
@@ -48,7 +48,7 @@ class VarseltekstRepository(private val database: Database) {
                         antall = it.int("antall"),
                         tekster = queryHelper.mapTekster(it)
                     )
-                }.asList
+                }
         }.let {
             TotaltAntall(teksttyper, it)
         }
@@ -102,7 +102,7 @@ class VarseltekstRepository(private val database: Database) {
                         antall = it.int("antall"),
                         tekster = queryHelper.mapTekster(it)
                     )
-                }.asList
+                }
         }.let {
             DetaljertAntall(teksttyper, it)
         }

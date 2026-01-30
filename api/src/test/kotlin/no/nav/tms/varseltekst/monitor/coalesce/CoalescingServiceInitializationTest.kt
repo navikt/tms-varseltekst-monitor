@@ -15,7 +15,7 @@ import org.junit.jupiter.params.provider.CsvSource
 
 internal class CoalescingServiceInitializationTest {
 
-    private val database = LocalPostgresDatabase.migratedDb()
+    private val database = LocalPostgresDatabase.cleanDb()
 
     private val coalescingRepository = CoalescingRepository(database)
     private val backlogRepository = BacklogRepository(database)

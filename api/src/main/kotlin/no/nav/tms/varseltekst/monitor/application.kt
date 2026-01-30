@@ -1,23 +1,22 @@
 package no.nav.tms.varseltekst.monitor
 
+import no.nav.tms.common.postgres.Postgres
 import no.nav.tms.kafka.application.KafkaApplication
 import no.nav.tms.varseltekst.monitor.coalesce.BacklogRepository
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingBacklogJob
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingRepository
 import no.nav.tms.varseltekst.monitor.coalesce.CoalescingService
 import no.nav.tms.varseltekst.monitor.coalesce.rules.*
-import no.nav.tms.varseltekst.monitor.setup.Database
 import no.nav.tms.varseltekst.monitor.setup.Environment
-import no.nav.tms.varseltekst.monitor.setup.Flyway
-import no.nav.tms.varseltekst.monitor.setup.PostgresDatabase
 import no.nav.tms.varseltekst.monitor.varsel.VarselOpprettetSubscriber
 import no.nav.tms.varseltekst.monitor.varsel.VarselRepository
 import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstRequestProcessor
 import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstRepository
+import org.flywaydb.core.Flyway
 
 fun main() {
     val environment = Environment()
-    val database: Database = PostgresDatabase(environment)
+    val database = Postgres.connectToJdbcUrl(environment.jdbcUrl)
 
     val coalescingRepository = CoalescingRepository(database)
     val backlogRepository = BacklogRepository(database)
@@ -72,7 +71,11 @@ fun main() {
         )
 
         onStartup {
-            Flyway.runFlywayMigrations(environment)
+            Flyway.configure()
+                .dataSource(database.dataSource)
+                .load()
+                .migrate()
+
             coalescingService.initialize()
         }
 

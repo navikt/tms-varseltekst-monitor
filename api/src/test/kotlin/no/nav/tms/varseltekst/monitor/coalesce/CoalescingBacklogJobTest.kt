@@ -4,6 +4,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.runBlocking
 import kotliquery.queryOf
+import no.nav.tms.common.postgres.PostgresDatabase
 import no.nav.tms.varseltekst.monitor.coalesce.rules.*
 import no.nav.tms.varseltekst.monitor.setup.*
 import no.nav.tms.varseltekst.monitor.varsel.TestVarsel
@@ -14,10 +15,9 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 
-internal class CoalescingBacklogJobTest {
+class CoalescingBacklogJobTest {
 
-    private val database = LocalPostgresDatabase.migratedDb()
-
+    private val database = LocalPostgresDatabase.cleanDb()
 
     private val numberCensorRule: CoalescingRuleWrapper
     private val greetingCensorRule: CoalescingRuleWrapper
@@ -108,7 +108,7 @@ internal class CoalescingBacklogJobTest {
                 join coalescing_rule as rule on rule.name = :rule
     """
 
-    private fun Database.insertIntoBacklog(rule: CoalescingRule, table: TekstTable) = update {
+    private fun PostgresDatabase.insertIntoBacklog(rule: CoalescingRule, table: TekstTable) = update {
         queryOf(
             insertBacklogQuery(table),
             mapOf("rule" to rule.name)
@@ -116,7 +116,7 @@ internal class CoalescingBacklogJobTest {
     }
 
 
-    private fun Database.deleteFromDb() {
+    private fun PostgresDatabase.deleteFromDb() {
         deleteCoalescingHistoryWebTekst()
         deleteCoalescingHistorySmsTekst()
         deleteCoalescingHistoryEpostTittel()

@@ -2,73 +2,42 @@ package no.nav.tms.varseltekst.monitor.setup
 
 import com.zaxxer.hikari.HikariDataSource
 import kotliquery.queryOf
+import no.nav.tms.common.postgres.Postgres
+import no.nav.tms.common.postgres.PostgresDatabase
 import org.flywaydb.core.Flyway
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.postgresql.PostgreSQLContainer
 
-class LocalPostgresDatabase private constructor() : Database {
+object LocalPostgresDatabase {
 
-    private val memDataSource: HikariDataSource
-    private val container = PostgreSQLContainer("postgres:14.5")
+    private val container = PostgreSQLContainer("postgres:14.5").apply {
+        waitingFor(Wait.forListeningPort())
+        start()
+    }
 
-    companion object {
-        private val instance by lazy {
-            LocalPostgresDatabase().also {
-                it.migrate()
+    private val instance by lazy {
+        Postgres.connectToContainer(container).also {
+            // Workaround to fix migration involving missing user.
+            it.update {
+                queryOf("create user cloudsqliamuser")
             }
-        }
 
-        fun migratedDb(): LocalPostgresDatabase {
-            instance.run {
-                deleteWebTekst()
-                deleteSmsTekst()
-                deleteEpostTittel()
-                deleteEpostTekst()
-                deleteVarsel()
-                deleteCoalescingRule()
-                deleteCoalescingBackLog()
-                deleteCoalescingHistoryWebTekst()
-                deleteCoalescingHistorySmsTekst()
-                deleteCoalescingHistoryEpostTittel()
-                deleteCoalescingHistoryEpostTekst()
-            }
-            return instance
+            migrate(it.dataSource)
         }
     }
 
-    init {
-        container.waitingFor(Wait.forListeningPort())
-        container.start()
-        memDataSource = createDataSource()
+    fun cleanDb(): PostgresDatabase {
+        instance.clearAllTables()
+
+        return instance
     }
 
-    override val dataSource: HikariDataSource
-        get() = memDataSource
-
-    private fun createDataSource(): HikariDataSource {
-        return HikariDataSource().apply {
-            jdbcUrl = container.jdbcUrl
-            username = container.username
-            password = container.password
-            isAutoCommit = true
-            maximumPoolSize = 3
-            validate()
-        }
-    }
-
-    private fun migrate() {
-
-        createCloudSqlIAMUser()
+    private fun migrate(dataSource: HikariDataSource) {
 
         Flyway.configure()
             .connectRetries(3)
             .dataSource(dataSource)
             .load()
             .migrate()
-    }
-
-    // Workaround to fix migration involving missing user.
-    private fun createCloudSqlIAMUser() = update {
-        queryOf("create user cloudsqliamuser")
     }
 }

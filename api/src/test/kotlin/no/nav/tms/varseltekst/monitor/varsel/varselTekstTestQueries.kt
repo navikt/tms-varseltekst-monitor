@@ -2,11 +2,11 @@ package no.nav.tms.varseltekst.monitor.varsel
 
 import kotliquery.Row
 import kotliquery.queryOf
+import no.nav.tms.common.postgres.PostgresDatabase
 import no.nav.tms.varseltekst.monitor.coalesce.TekstTable
-import no.nav.tms.varseltekst.monitor.setup.Database
 import no.nav.tms.varseltekst.monitor.util.LocalDateTimeHelper.nowAtUtc
 
-fun Database.insertTekst(table: TekstTable, tekst: String) = update {
+fun PostgresDatabase.insertTekst(table: TekstTable, tekst: String) = update {
     queryOf("INSERT INTO $table(tekst, first_seen_at) values(:tekst, :firstSeenAt)",
         mapOf(
             "tekst" to tekst,
@@ -15,7 +15,7 @@ fun Database.insertTekst(table: TekstTable, tekst: String) = update {
     )
 }
 
-fun Database.selectVarsel(eventId: String) = single {
+fun PostgresDatabase.selectVarsel(eventId: String) = single {
     queryOf("""
         SELECT v.*, wt.tekst as webTekst, st.tekst as smsTekst, ett.tekst as epostTittel, ete.tekst as epostTekst
           FROM varsel v
@@ -28,7 +28,6 @@ fun Database.selectVarsel(eventId: String) = single {
         mapOf("eventId" to eventId)
     )
         .map(toVarseloversikt())
-        .asSingle
 }
 
 private fun toVarseloversikt(): (Row) -> VarselOversikt = { result ->
@@ -48,14 +47,12 @@ private fun toVarseloversikt(): (Row) -> VarselOversikt = { result ->
     )
 }
 
-fun Database.antallTekster(type: TekstTable): Int = single {
+fun PostgresDatabase.antallTekster(type: TekstTable): Int = single {
     queryOf("select count(*) as antall from ${type.name}")
         .map { it.int("antall") }
-        .asSingle
 }
 
-fun Database.getTekster(type: TekstTable): List<String> = list {
+fun PostgresDatabase.getTekster(type: TekstTable): List<String> = list {
     queryOf("select tekst from ${type.name}")
         .map { it.string("tekst") }
-        .asList
 }
