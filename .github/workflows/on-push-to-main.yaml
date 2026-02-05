@@ -37,24 +37,8 @@ jobs:
         with:
           dependency-graph: generate-and-submit
 
-      - name: Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-          cache: 'npm'
-          cache-dependency-path: 'web-app/package-lock.json'
-
       - name: Bygg prosjekt og kjør tester
         run: ./gradlew build
-
-      - name: Installer npm dependencies
-        run: npm ci --legacy-peer-deps --prefix web-app
-
-      - name: Kjør web-app tester
-        run: npm test --prefix web-app
-
-      - name: Bygg frontend-filer
-        run: npm run build --prefix web-app
 
       - name: Build og push docker-image
         uses: nais/docker-build-push@v0
