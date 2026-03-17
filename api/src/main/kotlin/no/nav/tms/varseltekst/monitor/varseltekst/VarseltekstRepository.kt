@@ -39,7 +39,7 @@ class VarseltekstRepository(private val database: PostgresDatabase) {
                 mapOf(
                     "startDato" to startDato,
                     "sluttDato" to sluttDato,
-                    "varseltype" to varseltype,
+                    "varseltype" to varseltype?.lowercase(),
                     "eksternVarsling" to harEksternVarsling
                 )
             )
@@ -88,7 +88,7 @@ class VarseltekstRepository(private val database: PostgresDatabase) {
                 mapOf(
                     "startDato" to startDato,
                     "sluttDato" to sluttDato,
-                    "varseltype" to varseltype,
+                    "varseltype" to varseltype?.lowercase(),
                     "eksternVarsling" to harEksternVarsling
                 )
             )
