@@ -56,6 +56,7 @@ spec:
       claims:
         groups:
           - id: "cbe637e2-317f-48e1-a951-ce52fcea3fae"
+          - id: "bef3513f-ff51-4fc6-85d0-04d9ba8ff40d"
     sidecar:
       enabled: true
       autoLogin: true

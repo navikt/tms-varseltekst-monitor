@@ -23,7 +23,8 @@ spec:
       allowAllUsers: false
       claims:
         groups:
-          - id: '77cce29b-3cb8-45f7-8014-a551fb93f8a6'
+          - id: "77cce29b-3cb8-45f7-8014-a551fb93f8a6"
+          - id: "bef3513f-ff51-4fc6-85d0-04d9ba8ff40d"
       tenant: nav.no
     sidecar:
       enabled: true
