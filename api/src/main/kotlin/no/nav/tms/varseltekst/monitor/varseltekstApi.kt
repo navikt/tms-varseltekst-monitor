@@ -13,6 +13,7 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.tms.common.metrics.installTmsApiMetrics
+import no.nav.tms.token.support.azure.validation.AzurePrincipal
 import no.nav.tms.token.support.azure.validation.azure
 import no.nav.tms.varseltekst.monitor.varseltekst.FileNotFoundException
 import no.nav.tms.varseltekst.monitor.varseltekst.FileNotReadyException
@@ -80,6 +81,9 @@ fun Application.varseltekstMonitor(
 
 
     routing {
+        get("/debug") {
+            call.respondText(call.principal<AzurePrincipal>()!!.decodedJWT.token)
+        }
         varseltekstRoutes(queryHandler)
         staticFiles("/", File("app/public")) {
             preCompressed(CompressedFileType.GZIP)

@@ -29,6 +29,8 @@ dependencies {
     implementation(Flyway.postgres)
     implementation(Hikari.cp)
     implementation(Kotlinx.coroutines)
+    implementation(Ktor.Server.auth)
+    implementation(Ktor.Server.authJwt)
     implementation(Ktor.Server.netty)
     implementation(Ktor.Server.contentNegotiation)
     implementation(Ktor.Server.htmlDsl)
