@@ -81,9 +81,12 @@ fun Application.varseltekstMonitor(
 
 
     routing {
-        get("/debug") {
-            call.respondText(call.principal<AzurePrincipal>()!!.decodedJWT.token)
+        authenticate {
+            get("/debug") {
+                call.respondText(call.principal<AzurePrincipal>()!!.decodedJWT.token)
+            }
         }
+
         varseltekstRoutes(queryHandler)
         staticFiles("/", File("app/public")) {
             preCompressed(CompressedFileType.GZIP)
