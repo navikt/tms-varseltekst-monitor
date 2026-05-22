@@ -46,17 +46,18 @@ dependencies {
     implementation(TmsCommonLib.postgres)
     implementation(TmsCommonLib.teamLogger)
     implementation(TmsKafkaTools.kafkaApplication)
-    implementation(TmsKtorTokenSupport.azureValidation)
+    implementation(TmsKtorTokenSupport.entraIdTokenVerification)
 
     testImplementation(JunitPlatform.launcher)
     testImplementation(JunitJupiter.api)
+    testImplementation(JunitJupiter.engine)
     testImplementation(JunitJupiter.params)
     testImplementation(Mockk.mockk)
     testImplementation(TestContainers.postgresql)
     testImplementation(Kotest.runnerJunit5)
     testImplementation(Kotest.assertionsCore)
     testImplementation(Ktor.Test.serverTestHost)
-    testImplementation(TmsKtorTokenSupport.azureValidationMock)
+    testImplementation(TmsKtorTokenSupport.entraIdTokenVerificationMock)
 }
 
 application {

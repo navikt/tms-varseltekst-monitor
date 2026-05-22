@@ -13,7 +13,7 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.tms.common.metrics.installTmsApiMetrics
-import no.nav.tms.token.support.azure.validation.azure
+import no.nav.tms.token.support.entraid.token.verification.entraId
 import no.nav.tms.varseltekst.monitor.varseltekst.FileNotFoundException
 import no.nav.tms.varseltekst.monitor.varseltekst.FileNotReadyException
 import no.nav.tms.varseltekst.monitor.varseltekst.VarseltekstRequestProcessor
@@ -89,8 +89,8 @@ fun Application.varseltekstMonitor(
 
 private fun installAuth(): Application.() -> Unit = {
     authentication {
-        azure {
-            setAsDefault = true
+        entraId {
+
         }
     }
 }

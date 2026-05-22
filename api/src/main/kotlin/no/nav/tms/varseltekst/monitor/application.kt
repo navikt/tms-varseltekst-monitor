@@ -82,5 +82,9 @@ fun main() {
         onReady {
             coalescingBacklogJob.start()
         }
+
+        minSideMdc {
+            enabled = false
+        }
     }.start()
 }
