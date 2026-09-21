@@ -10,7 +10,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer
 
 object LocalPostgresDatabase {
 
-    private val container = PostgreSQLContainer("postgres:14.5").apply {
+    private val container = PostgreSQLContainer("postgres:18").apply {
         waitingFor(Wait.forListeningPort())
         start()
     }
