@@ -43,9 +43,9 @@ jobs:
           package_json_file: web-app/package.json
 
       - name: Setup node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 18
+          node-version: 24
           cache: 'pnpm'
           cache-dependency-path: 'web-app/pnpm-lock.yaml'
 
