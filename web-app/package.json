@@ -2,6 +2,7 @@
   "name": "tms-varseltekst-monitor",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.34.7",
   "scripts": {
     "start": "vite",
     "build": "tsc && vite build",
@@ -69,5 +70,8 @@
   },
   "msw": {
     "workerDirectory": "public"
+  },
+  "engines": {
+    "node": ">=24.0.0"
   }
 }
