@@ -14,5 +14,7 @@ jobs:
     with:
       commit: ${{ github.event.client_payload.commit }}
       clusters: ${{ toJSON(github.event.client_payload.clusters) }}
+      frontend-directory: 'web-app'
     secrets:
       NAIS_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
+      READER_TOKEN: ${{ secrets.READER_TOKEN }}
