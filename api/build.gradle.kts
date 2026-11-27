@@ -1,10 +1,8 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
 plugins {
-    kotlin("jvm").version(Kotlin.version)
-
-    id(TmsJarBundling.plugin)
-
+    alias(managed.plugins.kotlin)
+    alias(managed.plugins.tms.jarBundling)
     application
 }
 
@@ -23,41 +21,39 @@ repositories {
 }
 
 dependencies {
-    implementation(Apache.poi)
-    implementation(Apache.ooxml)
-    implementation(Flyway.core)
-    implementation(Flyway.postgres)
-    implementation(Hikari.cp)
-    implementation(Kotlinx.coroutines)
-    implementation(Ktor.Server.netty)
-    implementation(Ktor.Server.contentNegotiation)
-    implementation(Ktor.Server.htmlDsl)
-    implementation(Ktor.Server.statusPages)
-    implementation(Ktor.Server.auth)
-    implementation(Ktor.Serialization.jackson)
-    implementation(KotlinLogging.logging)
-    implementation(KotliQuery.kotliquery)
-    implementation(Logstash.logbackEncoder)
-    implementation(JacksonDatatype.datatypeJsr310)
-    implementation(JacksonDatatype.moduleKotlin)
-    implementation(Postgresql.postgresql)
-    implementation(TmsCommonLib.utils)
-    implementation(TmsCommonLib.metrics)
-    implementation(TmsCommonLib.postgres)
-    implementation(TmsCommonLib.teamLogger)
-    implementation(TmsKafkaTools.kafkaApplication)
-    implementation(TmsKtorTokenSupport.entraIdTokenVerification)
+    implementation(libs.apache.poi)
+    implementation(libs.apache.ooxml)
 
-    testImplementation(JunitPlatform.launcher)
-    testImplementation(JunitJupiter.api)
-    testImplementation(JunitJupiter.engine)
-    testImplementation(JunitJupiter.params)
-    testImplementation(Mockk.mockk)
-    testImplementation(TestContainers.postgresql)
-    testImplementation(Kotest.runnerJunit5)
-    testImplementation(Kotest.assertionsCore)
-    testImplementation(Ktor.Test.serverTestHost)
-    testImplementation(TmsKtorTokenSupport.entraIdTokenVerificationMock)
+    implementation(managed.flyway.core)
+    implementation(managed.hikariCp)
+    implementation(managed.kotlinx.coroutines)
+    implementation(managed.ktor.server.contentNegotiation)
+    implementation(managed.ktor.server.auth)
+    implementation(managed.ktor.serialization.jackson)
+    implementation(managed.kotlinLogging)
+    implementation(managed.kotliQuery)
+    implementation(managed.jackson.datatypeJsr310)
+    implementation(managed.jackson.moduleKotlin)
+    implementation(managed.tms.commonLib.utils)
+    implementation(managed.tms.commonLib.metrics)
+    implementation(managed.tms.commonLib.postgres)
+    implementation(managed.tms.commonLib.teamLogger)
+    implementation(managed.tms.kafka.application)
+    implementation(managed.tms.ktorTokenSupport.entraId.verification)
+    implementation(managed.ktor.server.netty)
+    implementation(managed.ktor.server.statusPages)
+
+    runtimeOnly(managed.flyway.postgres)
+    runtimeOnly(managed.logback.encoder)
+    runtimeOnly(managed.postgresql)
+
+    testImplementation(managed.junit.api)
+    testImplementation(managed.junit.params)
+    testImplementation(managed.testContainers.postgresql)
+    testImplementation(managed.kotest.assertion)
+
+    testRuntimeOnly(managed.junit.launcher)
+    testRuntimeOnly(managed.junit.engine)
 }
 
 application {

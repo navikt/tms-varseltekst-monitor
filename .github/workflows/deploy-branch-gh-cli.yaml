@@ -9,77 +9,14 @@ on:
         type: string
 
 permissions:
-  packages: write
+  contents: read
+  id-token: write
 
 jobs:
-  build:
-    name: Bygg prosjekt og push docker-image
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      id-token: write
-      packages: read
-    outputs:
-      image: ${{ steps.docker-build-push.outputs.image }}
-    steps:
-      - name: Sjekk ut prosjekt
-        uses: actions/checkout@v4
-
-      - name: Sett opp java
-        uses: actions/setup-java@v4
-        with:
-          java-version: 21
-          distribution: 'temurin'
-
-      - name: Sett opp gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Sett opp pnpm
-        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-        with:
-          package_json_file: web-app/package.json
-
-      - name: Setup node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-          registry-url: https://npm.pkg.github.com
-          cache: pnpm
-          cache-dependency-path: web-app/pnpm-lock.yaml
-
-      - name: Bygg prosjekt
-        run: ./gradlew assemble
-
-      - name: Installer pnpm dependencies
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm install --frozen-lockfile --dir web-app
-
-      - name: Bygg frontend-filer
-        run: pnpm --dir web-app build
-
-      - name: Build og push docker-image
-        uses: nais/docker-build-push@v0
-        id: docker-build-push
-        with:
-          team: min-side
-          identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
-          project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
-
   deploy:
-    name: Deploy til NAIS
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - name: Sjekk ut prosjekt
-        uses: actions/checkout@v4
-
-      - name: 'Deploy til ${{ inputs.cluster }}'
-        uses: nais/deploy/actions/deploy@v2
-        env:
-          CLUSTER: ${{ inputs.cluster }}
-          RESOURCE: ./nais/${{ inputs.cluster }}/nais.yaml
-          VAR: version=${{ needs.build.outputs.image }}
+    uses: navikt/tms-backend-deploy/.github/workflows/reusable-build-and-deploy.yml@main
+    with:
+      clusters: ${{ format('[{0}]', toJSON(inputs.cluster)) }}
+      frontend-directory: 'web-app'
+    secrets:
+      NAIS_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
