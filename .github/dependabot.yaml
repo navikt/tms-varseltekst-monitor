@@ -14,6 +14,10 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "08:00"
+    labels:
+      - tms-backend
+      - gradle-dependency
+
   - package-ecosystem: npm
     directory: "/"
     schedule:
@@ -21,3 +25,6 @@ updates:
       day: monday
       time: "08:00"
       timezone: Europe/Oslo
+
+    labels:
+      - tms-backend
