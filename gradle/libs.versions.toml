@@ -1,4 +1,4 @@
 [libraries]
 
-apache_poi = { group = "org.apache.poi", name = "poi", version = "5.4.1" }
+apache_poi = { group = "org.apache.poi", name = "poi", version = "6.0.0" }
 apache_ooxml = { group = "org.apache.poi", name = "poi-ooxml", version = "5.4.1" }
