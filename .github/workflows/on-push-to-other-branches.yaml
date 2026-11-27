@@ -7,10 +7,8 @@ on:
       - main
       - tms-dependency-admin_*
     paths-ignore:
-      - .github/workflows/**
+      - .github/**
       - README.md
-      - howto.md
-      - .github/dependabot.yml
 
 permissions:
   contents: read
